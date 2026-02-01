@@ -14,6 +14,7 @@ interface LeaderboardEntry {
   userId: string;
   userName: string | null;
   userImage: string | null;
+  crewName: string | null;
   totalDistance: number;
   totalRuns: number;
   bestPace: number | null;
@@ -74,8 +75,16 @@ export default function LeaderboardPage() {
     }
   };
 
-  const formatDistance = (km: number) => {
-    return km >= 1000 ? `${(km / 1000).toFixed(1)}K` : km.toFixed(3);
+  const getDistanceLabel = () => {
+    const filter = distanceFilters.find((f) => f.value === selectedDistance);
+    return filter?.label || "전체";
+  };
+
+  const formatDistanceDisplay = (km: number) => {
+    if (selectedDistance !== "all") {
+      return getDistanceLabel();
+    }
+    return km >= 1000 ? `${(km / 1000).toFixed(1)}K km` : `${km.toFixed(1)} km`;
   };
 
   const formatPace = (pace: number | null) => {
@@ -165,11 +174,11 @@ export default function LeaderboardPage() {
           {leaderboard.length >= 3 && (
             <div className="flex items-end justify-center gap-4 py-6">
               {/* 2nd Place */}
-              <PodiumItem entry={leaderboard[1]} rank={2} />
+              <PodiumItem entry={leaderboard[1]} rank={2} distanceLabel={getDistanceLabel()} />
               {/* 1st Place */}
-              <PodiumItem entry={leaderboard[0]} rank={1} />
+              <PodiumItem entry={leaderboard[0]} rank={1} distanceLabel={getDistanceLabel()} />
               {/* 3rd Place */}
-              <PodiumItem entry={leaderboard[2]} rank={3} />
+              <PodiumItem entry={leaderboard[2]} rank={3} distanceLabel={getDistanceLabel()} />
             </div>
           )}
 
@@ -196,12 +205,14 @@ export default function LeaderboardPage() {
                         {entry.userName?.[0]?.toUpperCase() || "U"}
                       </div>
                     )}
-                    <div className="flex-1">
-                      <p className="font-medium text-text-primary">{entry.userName || "Unknown"}</p>
-                      <p className="text-xs text-text-tertiary">{entry.totalRuns}회</p>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-text-primary truncate">{entry.userName || "Unknown"}</p>
+                      <p className="text-xs text-text-tertiary truncate">
+                        {entry.crewName || "크루 없음"} · {entry.totalRuns}회
+                      </p>
                     </div>
-                    <div className="text-right">
-                      <p className="font-bold text-text-secondary">{formatDistance(entry.totalDistance)} km</p>
+                    <div className="text-right shrink-0">
+                      <p className="font-bold text-text-secondary">{formatDistanceDisplay(entry.totalDistance)}</p>
                       <p className="text-xs text-text-tertiary">{formatPace(entry.bestPace)} /km</p>
                     </div>
                   </div>
@@ -215,7 +226,7 @@ export default function LeaderboardPage() {
   );
 }
 
-function PodiumItem({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
+function PodiumItem({ entry, rank, distanceLabel }: { entry: LeaderboardEntry; rank: number; distanceLabel: string }) {
   const sizes = {
     1: { avatar: "w-20 h-20", bar: "w-20 h-28", text: "text-2xl" },
     2: { avatar: "w-16 h-16", bar: "w-16 h-20", text: "text-xl" },
@@ -249,11 +260,14 @@ function PodiumItem({ entry, rank }: { entry: LeaderboardEntry; rank: number }) 
           <Trophy className="w-6 h-6 text-yellow-400 absolute -top-2 left-1/2 -translate-x-1/2" />
         )}
       </div>
-      <p className={`${rank === 1 ? "text-base font-semibold" : "text-sm font-medium"} text-text-primary`}>
+      <p className={`${rank === 1 ? "text-base font-semibold" : "text-sm font-medium"} text-text-primary truncate max-w-[80px]`}>
         {entry.userName || "Unknown"}
       </p>
+      {entry.crewName && (
+        <p className="text-[10px] text-text-tertiary truncate max-w-[80px]">{entry.crewName}</p>
+      )}
       <p className={`text-xs ${rank === 1 ? "text-primary font-bold" : "text-text-tertiary"}`}>
-        {entry.totalDistance.toFixed(3)} km
+        {distanceLabel !== "전체" ? distanceLabel : `${entry.totalDistance.toFixed(1)} km`}
       </p>
       <div className={`${size.bar} ${color} rounded-t-lg mt-2 flex items-center justify-center mx-auto`}>
         <span className={`${rank === 1 ? "text-3xl" : "text-2xl"} font-bold text-white`}>{rank}</span>

@@ -103,11 +103,23 @@ export async function GET(request: NextRequest) {
     _min: { pace: true },
   });
 
-  // Get user details
+  // Get user details with their crews
   const userIdsList = stats.map((s) => s.userId);
   const users = await prisma.user.findMany({
     where: { id: { in: userIdsList } },
-    select: { id: true, name: true, image: true },
+    select: {
+      id: true,
+      name: true,
+      image: true,
+      crewMemberships: {
+        select: {
+          crew: {
+            select: { name: true }
+          }
+        },
+        take: 1, // Get first crew
+      }
+    },
   });
 
   const userMap = new Map(users.map((u) => [u.id, u]));
@@ -116,10 +128,12 @@ export async function GET(request: NextRequest) {
   const leaderboard = stats
     .map((stat) => {
       const user = userMap.get(stat.userId);
+      const crewName = user?.crewMemberships?.[0]?.crew?.name || null;
       return {
         userId: stat.userId,
         userName: user?.name || null,
         userImage: user?.image || null,
+        crewName,
         totalDistance: stat._sum.distance || 0,
         totalRuns: stat._count.id,
         bestPace: stat._min.pace || null,

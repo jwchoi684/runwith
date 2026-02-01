@@ -1,0 +1,19 @@
+{
+  "name": "러닝 크루",
+  "short_name": "러닝 크루",
+  "description": "마라톤 기록을 크루와 함께 공유하세요",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#121417",
+  "theme_color": "#121417",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "categories": ["sports", "fitness", "health"]
+}

@@ -1,7 +1,104 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
-import { Medal, Trophy, Award } from "lucide-react";
+import { Trophy, Users, ChevronDown } from "lucide-react";
+import Image from "next/image";
+
+interface Crew {
+  id: string;
+  name: string;
+}
+
+interface LeaderboardEntry {
+  userId: string;
+  userName: string | null;
+  userImage: string | null;
+  totalDistance: number;
+  totalRuns: number;
+  bestPace: number | null;
+}
+
+const distanceFilters = [
+  { label: "전체", value: "all" },
+  { label: "풀마라톤", value: "42" },
+  { label: "하프", value: "21" },
+  { label: "10K", value: "10" },
+  { label: "5K", value: "5" },
+];
+
+const timeFilters = [
+  { label: "이번 주", value: "week" },
+  { label: "이번 달", value: "month" },
+  { label: "올해", value: "year" },
+  { label: "전체", value: "all" },
+];
 
 export default function LeaderboardPage() {
+  const [crews, setCrews] = useState<Crew[]>([]);
+  const [selectedCrew, setSelectedCrew] = useState<string>("all");
+  const [selectedDistance, setSelectedDistance] = useState("all");
+  const [selectedTime, setSelectedTime] = useState("month");
+  const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showCrewDropdown, setShowCrewDropdown] = useState(false);
+
+  useEffect(() => {
+    fetchCrews();
+  }, []);
+
+  useEffect(() => {
+    fetchLeaderboard();
+  }, [selectedCrew, selectedDistance, selectedTime]);
+
+  const fetchCrews = async () => {
+    try {
+      const response = await fetch("/api/crews?filter=my");
+      if (response.ok) {
+        const data = await response.json();
+        setCrews(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch crews:", error);
+    }
+  };
+
+  const fetchLeaderboard = async () => {
+    setIsLoading(true);
+    try {
+      const params = new URLSearchParams({
+        crew: selectedCrew,
+        distance: selectedDistance,
+        time: selectedTime,
+      });
+      const response = await fetch(`/api/leaderboard?${params}`);
+      if (response.ok) {
+        const data = await response.json();
+        setLeaderboard(data);
+      }
+    } catch (error) {
+      console.error("Failed to fetch leaderboard:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const formatDistance = (km: number) => {
+    return km >= 1000 ? `${(km / 1000).toFixed(1)}K` : km.toFixed(1);
+  };
+
+  const formatPace = (pace: number | null) => {
+    if (!pace) return "-";
+    const mins = Math.floor(pace);
+    const secs = Math.round((pace - mins) * 60);
+    return `${mins}'${secs.toString().padStart(2, "0")}"`;
+  };
+
+  const getCrewLabel = () => {
+    if (selectedCrew === "all") return "전체";
+    return crews.find((c) => c.id === selectedCrew)?.name || "전체";
+  };
+
   return (
     <div className="p-4 space-y-4">
       {/* Header */}
@@ -9,153 +106,181 @@ export default function LeaderboardPage() {
         <h1 className="text-2xl font-bold text-text-primary">리더보드</h1>
       </header>
 
-      {/* Filter Chips */}
-      <div className="flex gap-2 overflow-x-auto pb-2">
-        <FilterChip label="풀마라톤" active />
-        <FilterChip label="하프마라톤" />
-        <FilterChip label="10K" />
-        <FilterChip label="5K" />
+      {/* Crew Filter */}
+      <div className="relative">
+        <button
+          onClick={() => setShowCrewDropdown(!showCrewDropdown)}
+          className="w-full flex items-center justify-between bg-surface border border-border rounded-xl px-4 py-3"
+        >
+          <div className="flex items-center gap-2">
+            <Users className="w-5 h-5 text-text-tertiary" />
+            <span className="text-text-primary font-medium">{getCrewLabel()}</span>
+          </div>
+          <ChevronDown className={`w-5 h-5 text-text-tertiary transition-transform ${showCrewDropdown ? "rotate-180" : ""}`} />
+        </button>
+
+        {showCrewDropdown && (
+          <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-xl shadow-lg z-10 overflow-hidden">
+            <button
+              onClick={() => { setSelectedCrew("all"); setShowCrewDropdown(false); }}
+              className={`w-full px-4 py-3 text-left hover:bg-surface-elevated ${selectedCrew === "all" ? "bg-primary/10 text-primary" : "text-text-primary"}`}
+            >
+              전체
+            </button>
+            {crews.map((crew) => (
+              <button
+                key={crew.id}
+                onClick={() => { setSelectedCrew(crew.id); setShowCrewDropdown(false); }}
+                className={`w-full px-4 py-3 text-left hover:bg-surface-elevated ${selectedCrew === crew.id ? "bg-primary/10 text-primary" : "text-text-primary"}`}
+              >
+                {crew.name}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Time Range Tabs */}
+      {/* Distance Filter */}
+      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
+        {distanceFilters.map((filter) => (
+          <button
+            key={filter.value}
+            onClick={() => setSelectedDistance(filter.value)}
+            className={`px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-colors ${
+              selectedDistance === filter.value
+                ? "bg-primary text-white"
+                : "bg-surface-elevated text-text-secondary hover:bg-border"
+            }`}
+          >
+            {filter.label}
+          </button>
+        ))}
+      </div>
+
+      {/* Time Filter */}
       <div className="flex border-b border-border">
-        <TabButton label="이번 주" active />
-        <TabButton label="이번 달" />
-        <TabButton label="올해" />
-        <TabButton label="전체" />
+        {timeFilters.map((filter) => (
+          <button
+            key={filter.value}
+            onClick={() => setSelectedTime(filter.value)}
+            className={`flex-1 py-3 text-sm font-medium text-center border-b-2 transition-colors ${
+              selectedTime === filter.value
+                ? "text-primary border-primary"
+                : "text-text-tertiary border-transparent hover:text-text-secondary"
+            }`}
+          >
+            {filter.label}
+          </button>
+        ))}
       </div>
 
-      {/* Podium */}
-      <div className="flex items-end justify-center gap-4 py-6">
-        {/* 2nd Place */}
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-surface-elevated mx-auto mb-2 flex items-center justify-center">
-            <span className="text-xl font-bold">SK</span>
-          </div>
-          <p className="text-sm font-medium text-text-primary">Sarah Kim</p>
-          <p className="text-xs text-text-tertiary">3:02:15</p>
-          <div className="w-16 h-20 bg-gray-400 rounded-t-lg mt-2 flex items-center justify-center">
-            <span className="text-2xl font-bold text-white">2</span>
-          </div>
+      {/* Leaderboard */}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
+          <p className="text-text-tertiary mt-3">불러오는 중...</p>
         </div>
-
-        {/* 1st Place */}
-        <div className="text-center">
-          <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-primary mx-auto mb-2 flex items-center justify-center border-4 border-yellow-400">
-              <span className="text-2xl font-bold text-white">JK</span>
+      ) : leaderboard.length === 0 ? (
+        <Card className="text-center py-12">
+          <Trophy className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+          <p className="text-text-secondary">아직 기록이 없습니다</p>
+        </Card>
+      ) : (
+        <>
+          {/* Podium for top 3 */}
+          {leaderboard.length >= 3 && (
+            <div className="flex items-end justify-center gap-4 py-6">
+              {/* 2nd Place */}
+              <PodiumItem entry={leaderboard[1]} rank={2} />
+              {/* 1st Place */}
+              <PodiumItem entry={leaderboard[0]} rank={1} />
+              {/* 3rd Place */}
+              <PodiumItem entry={leaderboard[2]} rank={3} />
             </div>
-            <Trophy className="w-6 h-6 text-yellow-400 absolute -top-2 left-1/2 -translate-x-1/2" />
-          </div>
-          <p className="text-base font-semibold text-text-primary">Jay Kim</p>
-          <p className="text-sm text-primary font-bold">2:58:42</p>
-          <div className="w-20 h-28 bg-yellow-500 rounded-t-lg mt-2 flex items-center justify-center">
-            <span className="text-3xl font-bold text-white">1</span>
-          </div>
-        </div>
+          )}
 
-        {/* 3rd Place */}
-        <div className="text-center">
-          <div className="w-16 h-16 rounded-full bg-surface-elevated mx-auto mb-2 flex items-center justify-center">
-            <span className="text-xl font-bold">MP</span>
+          {/* Rest of leaderboard */}
+          <div className="space-y-2">
+            {leaderboard.slice(3).map((entry, index) => (
+              <Card key={entry.userId}>
+                <div className="flex items-center gap-4">
+                  <span className="w-8 text-center font-bold text-text-tertiary">
+                    {index + 4}
+                  </span>
+                  {entry.userImage ? (
+                    <Image
+                      src={entry.userImage}
+                      alt={entry.userName || "User"}
+                      width={40}
+                      height={40}
+                      className="rounded-full"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-primary font-semibold">
+                      {entry.userName?.[0]?.toUpperCase() || "U"}
+                    </div>
+                  )}
+                  <div className="flex-1">
+                    <p className="font-medium text-text-primary">{entry.userName || "Unknown"}</p>
+                    <p className="text-xs text-text-tertiary">{entry.totalRuns}회</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-text-secondary">{formatDistance(entry.totalDistance)} km</p>
+                    <p className="text-xs text-text-tertiary">{formatPace(entry.bestPace)} /km</p>
+                  </div>
+                </div>
+              </Card>
+            ))}
           </div>
-          <p className="text-sm font-medium text-text-primary">Min Park</p>
-          <p className="text-xs text-text-tertiary">3:05:30</p>
-          <div className="w-16 h-16 bg-amber-600 rounded-t-lg mt-2 flex items-center justify-center">
-            <span className="text-2xl font-bold text-white">3</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Leaderboard List */}
-      <div className="space-y-2">
-        <LeaderboardItem rank={4} name="James Park" time="3:08:42" />
-        <LeaderboardItem rank={5} name="Min Ji Lee" time="3:12:15" />
-        <LeaderboardItem rank={6} name="David Cho" time="3:15:33" />
-        <LeaderboardItem rank={7} name="Emma Wang" time="3:18:07" />
-
-        {/* My Position */}
-        <div className="py-2">
-          <Card className="border-primary bg-primary/10">
-            <div className="flex items-center gap-4">
-              <span className="w-8 text-center font-bold text-primary">42</span>
-              <div className="w-10 h-10 rounded-full bg-primary flex items-center justify-center text-white font-semibold">
-                나
-              </div>
-              <div className="flex-1">
-                <p className="font-medium text-text-primary">나 (You)</p>
-              </div>
-              <p className="font-bold text-primary">4:12:30</p>
-            </div>
-          </Card>
-        </div>
-      </div>
+        </>
+      )}
     </div>
   );
 }
 
-function FilterChip({ label, active = false }: { label: string; active?: boolean }) {
-  return (
-    <button
-      className={`
-        px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap
-        transition-colors duration-200
-        ${
-          active
-            ? "bg-primary text-white"
-            : "bg-surface-elevated text-text-secondary hover:bg-border"
-        }
-      `}
-    >
-      {label}
-    </button>
-  );
-}
+function PodiumItem({ entry, rank }: { entry: LeaderboardEntry; rank: number }) {
+  const sizes = {
+    1: { avatar: "w-20 h-20", bar: "w-20 h-28", text: "text-2xl" },
+    2: { avatar: "w-16 h-16", bar: "w-16 h-20", text: "text-xl" },
+    3: { avatar: "w-16 h-16", bar: "w-16 h-16", text: "text-xl" },
+  };
+  const colors = {
+    1: "bg-yellow-500",
+    2: "bg-gray-400",
+    3: "bg-amber-600",
+  };
+  const size = sizes[rank as keyof typeof sizes];
+  const color = colors[rank as keyof typeof colors];
 
-function TabButton({ label, active = false }: { label: string; active?: boolean }) {
   return (
-    <button
-      className={`
-        flex-1 py-3 text-sm font-medium text-center
-        border-b-2 transition-colors duration-200
-        ${
-          active
-            ? "text-primary border-primary"
-            : "text-text-tertiary border-transparent hover:text-text-secondary"
-        }
-      `}
-    >
-      {label}
-    </button>
-  );
-}
-
-function LeaderboardItem({
-  rank,
-  name,
-  time,
-}: {
-  rank: number;
-  name: string;
-  time: string;
-}) {
-  return (
-    <Card>
-      <div className="flex items-center gap-4">
-        <span className="w-8 text-center font-bold text-text-tertiary">
-          {rank}
-        </span>
-        <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-primary font-semibold">
-          {name
-            .split(" ")
-            .map((n) => n[0])
-            .join("")}
-        </div>
-        <div className="flex-1">
-          <p className="font-medium text-text-primary">{name}</p>
-        </div>
-        <p className="font-bold text-text-secondary">{time}</p>
+    <div className="text-center">
+      <div className="relative">
+        {entry.userImage ? (
+          <Image
+            src={entry.userImage}
+            alt={entry.userName || "User"}
+            width={rank === 1 ? 80 : 64}
+            height={rank === 1 ? 80 : 64}
+            className={`${size.avatar} rounded-full mx-auto mb-2 ${rank === 1 ? "border-4 border-yellow-400" : ""}`}
+          />
+        ) : (
+          <div className={`${size.avatar} rounded-full bg-surface-elevated mx-auto mb-2 flex items-center justify-center ${rank === 1 ? "border-4 border-yellow-400" : ""}`}>
+            <span className={`${size.text} font-bold`}>{entry.userName?.[0]?.toUpperCase() || "U"}</span>
+          </div>
+        )}
+        {rank === 1 && (
+          <Trophy className="w-6 h-6 text-yellow-400 absolute -top-2 left-1/2 -translate-x-1/2" />
+        )}
       </div>
-    </Card>
+      <p className={`${rank === 1 ? "text-base font-semibold" : "text-sm font-medium"} text-text-primary`}>
+        {entry.userName || "Unknown"}
+      </p>
+      <p className={`text-xs ${rank === 1 ? "text-primary font-bold" : "text-text-tertiary"}`}>
+        {entry.totalDistance.toFixed(1)} km
+      </p>
+      <div className={`${size.bar} ${color} rounded-t-lg mt-2 flex items-center justify-center mx-auto`}>
+        <span className={`${rank === 1 ? "text-3xl" : "text-2xl"} font-bold text-white`}>{rank}</span>
+      </div>
+    </div>
   );
 }

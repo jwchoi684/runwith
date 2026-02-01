@@ -142,34 +142,39 @@ export default function EventsPage() {
     window.location.href = `/records/new?eventId=${eventId}`;
   };
 
-  // 오늘 기준으로 예정 대회와 지난 대회 분리
-  const today = useMemo(() => {
+  // 오늘 날짜 (날짜만 비교하기 위해 YYYY-MM-DD 형식으로)
+  const todayStr = useMemo(() => {
     const d = new Date();
-    d.setHours(0, 0, 0, 0);
-    return d;
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
   }, []);
+
+  // 이벤트 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 무관하게 날짜만 추출)
+  const getEventDateStr = (dateStr: string) => {
+    // ISO 형식에서 날짜 부분만 추출 (예: "2025-01-15T00:00:00.000Z" -> "2025-01-15")
+    return dateStr.split('T')[0];
+  };
 
   // 예정 대회 (오늘 이후) - 연도 필터 없이 모든 미래 대회 표시
   const upcomingEvents = useMemo(() => {
     return events
       .filter((event) => {
         if (!event.date) return false;
-        const eventDate = new Date(event.date);
-        return eventDate >= today;
+        const eventDateStr = getEventDateStr(event.date);
+        return eventDateStr >= todayStr;
       })
-      .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime());
-  }, [events, today]);
+      .sort((a, b) => getEventDateStr(a.date!).localeCompare(getEventDateStr(b.date!)));
+  }, [events, todayStr]);
 
   // 지난 대회 (오늘 이전) - 연도 필터 없이 모든 과거 대회 표시
   const pastEvents = useMemo(() => {
     return events
       .filter((event) => {
         if (!event.date) return false;
-        const eventDate = new Date(event.date);
-        return eventDate < today;
+        const eventDateStr = getEventDateStr(event.date);
+        return eventDateStr < todayStr;
       })
-      .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime()); // 최신순
-  }, [events, today]);
+      .sort((a, b) => getEventDateStr(b.date!).localeCompare(getEventDateStr(a.date!))); // 최신순
+  }, [events, todayStr]);
 
   // 현재 표시할 대회 목록
   const displayEvents = useMemo(() => {
@@ -178,19 +183,16 @@ export default function EventsPage() {
 
   // 내 대회 필터링
   const myUpcomingEvents = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
     return userEvents
       .filter((ue) => {
         if (!ue.event.date) return false;
-        const eventDate = new Date(ue.event.date);
-        return eventDate >= today;
+        const eventDateStr = getEventDateStr(ue.event.date);
+        return eventDateStr >= todayStr;
       })
       .sort((a, b) => {
-        return new Date(a.event.date!).getTime() - new Date(b.event.date!).getTime();
+        return getEventDateStr(a.event.date!).localeCompare(getEventDateStr(b.event.date!));
       });
-  }, [userEvents]);
+  }, [userEvents, todayStr]);
 
   // 1월부터 12월까지 모든 월 목록
   const allMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -480,9 +482,20 @@ export default function EventsPage() {
               <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
               <p className="text-text-secondary">
                 {selectedMonth
-                  ? `${selectedMonth}월에 예정된 대회가 없습니다`
-                  : "올해 예정된 대회가 없습니다"}
+                  ? `${selectedMonth}월에 ${showPast ? "지난" : "예정된"} 대회가 없습니다`
+                  : `${showPast ? "지난" : "예정된"} 대회가 없습니다`}
               </p>
+              {!showPast && pastEvents.length > 0 && (
+                <button
+                  onClick={() => {
+                    setShowPast(true);
+                    setSelectedMonth(null);
+                  }}
+                  className="text-primary text-sm mt-2 hover:underline"
+                >
+                  지난 대회 보기 ({pastEvents.length}개)
+                </button>
+              )}
             </Card>
           ) : (
             <div className="space-y-6">

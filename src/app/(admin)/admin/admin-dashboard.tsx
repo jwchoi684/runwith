@@ -320,6 +320,18 @@ export function AdminDashboard({
   const selectedCrew = crews.find((c) => c.id === selectedCrewId);
   const userRecords = recentRecords.filter((r) => r.user.id === selectedUserId);
 
+  // 선택된 사용자의 접속 로그, API 로그 필터링
+  const userAccessLogs = accessLogs.filter((log) => log.userId === selectedUserId);
+  const userApiLogs = apiLogs.filter((log) => log.ipAddress && userAccessLogs.some((al) => al.ipAddress === log.ipAddress));
+
+  // 사용자 페이지 뷰 통계
+  const userPageViews = userAccessLogs.reduce((acc, log) => {
+    const path = log.path || "unknown";
+    acc[path] = (acc[path] || 0) + 1;
+    return acc;
+  }, {} as Record<string, number>);
+  const sortedUserPageViews = Object.entries(userPageViews).sort((a, b) => b[1] - a[1]);
+
   // Filter rankings by crew
   const filteredRankings = selectedRankingCrew === "all"
     ? rankings
@@ -3050,6 +3062,18 @@ export function AdminDashboard({
                   <p className="text-2xl font-bold text-text-primary">{selectedUser._count.ownedCrews}</p>
                   <p className="text-sm text-text-tertiary">운영 크루</p>
                 </Card>
+                <Card className="text-center py-4">
+                  <p className="text-2xl font-bold text-primary">{userAccessLogs.length}</p>
+                  <p className="text-sm text-text-tertiary">접속 로그</p>
+                </Card>
+                <Card className="text-center py-4">
+                  <p className="text-2xl font-bold text-primary">{sortedUserPageViews.length}</p>
+                  <p className="text-sm text-text-tertiary">방문 페이지</p>
+                </Card>
+                <Card className="text-center py-4">
+                  <p className="text-2xl font-bold text-primary">{userApiLogs.length}</p>
+                  <p className="text-sm text-text-tertiary">API 호출</p>
+                </Card>
               </div>
 
               <section>
@@ -3080,6 +3104,102 @@ export function AdminDashboard({
                         {record.notes && (
                           <p className="text-sm text-text-tertiary mt-2">{record.notes}</p>
                         )}
+                      </div>
+                    ))
+                  )}
+                </Card>
+              </section>
+
+              {/* 페이지 뷰 통계 */}
+              <section>
+                <h3 className="text-lg font-semibold text-text-primary mb-3">
+                  <BarChart3 className="w-5 h-5 inline mr-2" />
+                  페이지 뷰 통계
+                </h3>
+                <Card className="divide-y divide-border">
+                  {sortedUserPageViews.length === 0 ? (
+                    <p className="text-center text-text-tertiary py-8">페이지 뷰 기록이 없습니다</p>
+                  ) : (
+                    sortedUserPageViews.slice(0, 10).map(([path, count]) => (
+                      <div key={path} className="p-3 flex items-center justify-between">
+                        <span className="text-text-primary font-mono text-sm">{path}</span>
+                        <span className="text-text-secondary text-sm font-medium">{count}회</span>
+                      </div>
+                    ))
+                  )}
+                </Card>
+              </section>
+
+              {/* 접속 로그 */}
+              <section>
+                <h3 className="text-lg font-semibold text-text-primary mb-3">
+                  <History className="w-5 h-5 inline mr-2" />
+                  최근 접속 로그 ({userAccessLogs.length}개)
+                </h3>
+                <Card className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                  {userAccessLogs.length === 0 ? (
+                    <p className="text-center text-text-tertiary py-8">접속 기록이 없습니다</p>
+                  ) : (
+                    userAccessLogs.slice(0, 50).map((log) => (
+                      <div key={log.id} className="p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-sm font-medium text-text-primary">
+                            {log.action === "page_view" ? "페이지 방문" : log.action}
+                          </span>
+                          <span className="text-xs text-text-tertiary">
+                            {formatRelativeTime(new Date(log.createdAt))}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-text-tertiary">
+                          {log.path && <span className="font-mono">{log.path}</span>}
+                          {log.ipAddress && <span>IP: {log.ipAddress}</span>}
+                          {log.metadata?.location && (
+                            <span className="flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {String(log.metadata.location)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </Card>
+              </section>
+
+              {/* API 로그 (IP 기반) */}
+              <section>
+                <h3 className="text-lg font-semibold text-text-primary mb-3">
+                  <Activity className="w-5 h-5 inline mr-2" />
+                  API 호출 로그 (IP 기반, {userApiLogs.length}개)
+                </h3>
+                <Card className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                  {userApiLogs.length === 0 ? (
+                    <p className="text-center text-text-tertiary py-8">API 호출 기록이 없습니다</p>
+                  ) : (
+                    userApiLogs.slice(0, 50).map((log) => (
+                      <div key={log.id} className="p-3">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
+                              log.method === "GET" ? "bg-green-500/10 text-green-500" :
+                              log.method === "POST" ? "bg-blue-500/10 text-blue-500" :
+                              log.method === "PUT" ? "bg-yellow-500/10 text-yellow-500" :
+                              log.method === "DELETE" ? "bg-red-500/10 text-red-500" :
+                              "bg-gray-500/10 text-gray-500"
+                            }`}>
+                              {log.method}
+                            </span>
+                            <span className="font-mono text-sm text-text-primary">{log.path}</span>
+                          </div>
+                          <span className="text-xs text-text-tertiary">
+                            {formatRelativeTime(new Date(log.createdAt))}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-3 text-xs text-text-tertiary">
+                          {log.statusCode && <span>Status: {log.statusCode}</span>}
+                          {log.duration && <span>{log.duration}ms</span>}
+                          {log.ipAddress && <span>IP: {log.ipAddress}</span>}
+                        </div>
                       </div>
                     ))
                   )}

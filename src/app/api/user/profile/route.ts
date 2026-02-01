@@ -18,6 +18,8 @@ export async function GET() {
       pbFull: true,
       pbHalf: true,
       pb10k: true,
+      isPublicProfile: true,
+      isPublicRecords: true,
     },
   });
 
@@ -36,21 +38,28 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { name, pbFull, pbHalf, pb10k } = body;
+    const { name, pbFull, pbHalf, pb10k, isPublicProfile, isPublicRecords } = body;
 
-    if (!name || typeof name !== "string") {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
-    }
+    // Build update data object dynamically
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateData: any = {};
 
-    const trimmedName = name.trim();
-    if (trimmedName.length < 1 || trimmedName.length > 50) {
-      return NextResponse.json(
-        { error: "Name must be between 1 and 50 characters" },
-        { status: 400 }
-      );
+    // Update name if provided
+    if (name !== undefined) {
+      if (typeof name !== "string") {
+        return NextResponse.json(
+          { error: "Name must be a string" },
+          { status: 400 }
+        );
+      }
+      const trimmedName = name.trim();
+      if (trimmedName.length < 1 || trimmedName.length > 50) {
+        return NextResponse.json(
+          { error: "Name must be between 1 and 50 characters" },
+          { status: 400 }
+        );
+      }
+      updateData.name = trimmedName;
     }
 
     // Validate personal best times (must be positive integers or null)
@@ -61,14 +70,21 @@ export async function PUT(request: Request) {
       return num;
     };
 
+    if (pbFull !== undefined) updateData.pbFull = validatePB(pbFull);
+    if (pbHalf !== undefined) updateData.pbHalf = validatePB(pbHalf);
+    if (pb10k !== undefined) updateData.pb10k = validatePB(pb10k);
+
+    // Update privacy settings if provided
+    if (typeof isPublicProfile === "boolean") {
+      updateData.isPublicProfile = isPublicProfile;
+    }
+    if (typeof isPublicRecords === "boolean") {
+      updateData.isPublicRecords = isPublicRecords;
+    }
+
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: {
-        name: trimmedName,
-        pbFull: validatePB(pbFull),
-        pbHalf: validatePB(pbHalf),
-        pb10k: validatePB(pb10k),
-      },
+      data: updateData,
       select: {
         id: true,
         name: true,
@@ -77,6 +93,8 @@ export async function PUT(request: Request) {
         pbFull: true,
         pbHalf: true,
         pb10k: true,
+        isPublicProfile: true,
+        isPublicRecords: true,
       },
     });
 

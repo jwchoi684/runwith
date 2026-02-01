@@ -5,11 +5,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
   ArrowLeft,
-  Bell,
   Lock,
   Eye,
-  Moon,
-  Globe,
   Trash2,
   LogOut,
   User,
@@ -26,6 +23,8 @@ interface UserProfile {
   name: string | null;
   email: string | null;
   image: string | null;
+  isPublicProfile: boolean;
+  isPublicRecords: boolean;
 }
 
 export default function SettingsPage() {
@@ -38,17 +37,6 @@ export default function SettingsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState("");
-
-  const [notifications, setNotifications] = useState({
-    crewActivity: true,
-    newRecords: true,
-    weeklyReport: false,
-  });
-
-  const [privacy, setPrivacy] = useState({
-    publicProfile: true,
-    showRecords: true,
-  });
 
   useEffect(() => {
     fetchProfile();
@@ -104,6 +92,31 @@ export default function SettingsPage() {
     setNewName(profile?.name || "");
     setIsEditingName(false);
     setError("");
+  };
+
+  const handlePrivacyChange = async (field: "isPublicProfile" | "isPublicRecords", value: boolean) => {
+    if (!profile) return;
+
+    // Optimistic update
+    setProfile({ ...profile, [field]: value });
+
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ [field]: value }),
+      });
+
+      if (!response.ok) {
+        // Revert on failure
+        setProfile({ ...profile, [field]: !value });
+        console.error("Failed to update privacy setting");
+      }
+    } catch (error) {
+      // Revert on failure
+      setProfile({ ...profile, [field]: !value });
+      console.error("Failed to update privacy setting:", error);
+    }
   };
 
   const handleLogout = async () => {
@@ -217,40 +230,6 @@ export default function SettingsPage() {
         </Card>
       </section>
 
-      {/* Notifications */}
-      <section>
-        <h2 className="text-sm font-medium text-text-tertiary mb-3 px-1">알림</h2>
-        <Card className="divide-y divide-border">
-          <SettingToggle
-            icon={<Bell className="w-5 h-5" />}
-            label="크루 활동 알림"
-            description="크루 멤버의 새 기록 알림"
-            checked={notifications.crewActivity}
-            onChange={(checked) =>
-              setNotifications({ ...notifications, crewActivity: checked })
-            }
-          />
-          <SettingToggle
-            icon={<Bell className="w-5 h-5" />}
-            label="기록 달성 알림"
-            description="새 기록 달성 시 알림"
-            checked={notifications.newRecords}
-            onChange={(checked) =>
-              setNotifications({ ...notifications, newRecords: checked })
-            }
-          />
-          <SettingToggle
-            icon={<Bell className="w-5 h-5" />}
-            label="주간 리포트"
-            description="매주 러닝 통계 요약"
-            checked={notifications.weeklyReport}
-            onChange={(checked) =>
-              setNotifications({ ...notifications, weeklyReport: checked })
-            }
-          />
-        </Card>
-      </section>
-
       {/* Privacy */}
       <section>
         <h2 className="text-sm font-medium text-text-tertiary mb-3 px-1">개인정보</h2>
@@ -259,36 +238,15 @@ export default function SettingsPage() {
             icon={<Eye className="w-5 h-5" />}
             label="공개 프로필"
             description="다른 사용자가 프로필 조회 가능"
-            checked={privacy.publicProfile}
-            onChange={(checked) =>
-              setPrivacy({ ...privacy, publicProfile: checked })
-            }
+            checked={profile?.isPublicProfile ?? true}
+            onChange={(checked) => handlePrivacyChange("isPublicProfile", checked)}
           />
           <SettingToggle
             icon={<Lock className="w-5 h-5" />}
             label="기록 공개"
             description="크루원에게 러닝 기록 공개"
-            checked={privacy.showRecords}
-            onChange={(checked) =>
-              setPrivacy({ ...privacy, showRecords: checked })
-            }
-          />
-        </Card>
-      </section>
-
-      {/* App Settings */}
-      <section>
-        <h2 className="text-sm font-medium text-text-tertiary mb-3 px-1">앱 설정</h2>
-        <Card className="divide-y divide-border">
-          <SettingItem
-            icon={<Moon className="w-5 h-5" />}
-            label="다크 모드"
-            value="시스템 설정"
-          />
-          <SettingItem
-            icon={<Globe className="w-5 h-5" />}
-            label="언어"
-            value="한국어"
+            checked={profile?.isPublicRecords ?? true}
+            onChange={(checked) => handlePrivacyChange("isPublicRecords", checked)}
           />
         </Card>
       </section>
@@ -399,26 +357,6 @@ function SettingToggle({
           }`}
         />
       </button>
-    </div>
-  );
-}
-
-function SettingItem({
-  icon,
-  label,
-  value,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-}) {
-  return (
-    <div className="flex items-center justify-between p-4">
-      <div className="flex items-center gap-3">
-        <span className="text-text-tertiary">{icon}</span>
-        <span className="font-medium text-text-primary">{label}</span>
-      </div>
-      <span className="text-text-tertiary text-sm">{value}</span>
     </div>
   );
 }

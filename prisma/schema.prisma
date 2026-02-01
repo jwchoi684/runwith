@@ -46,6 +46,9 @@ model User {
   pbHalf        Int?      // 하프마라톤 개인 최고 기록
   pb10k         Int?      // 10K 개인 최고 기록
   lastAccessedAt DateTime? // 마지막 접속 시간
+  // Privacy settings
+  isPublicProfile Boolean @default(true)  // 공개 프로필
+  isPublicRecords Boolean @default(true)  // 기록 공개
   accounts      Account[]
   sessions      Session[]
   runningLogs   RunningLog[]

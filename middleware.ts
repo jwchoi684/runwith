@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
+import type { NextRequest, NextFetchEvent } from "next/server";
 
-export async function middleware(request: NextRequest) {
+export function middleware(request: NextRequest, event: NextFetchEvent) {
   const path = request.nextUrl.pathname;
 
   // Skip logging for non-API routes, static files, and specific endpoints
@@ -33,16 +33,14 @@ export async function middleware(request: NextRequest) {
     },
   });
 
-  // Log API call asynchronously using internal fetch
-  // Use absolute URL for Edge runtime
-  try {
-    const baseUrl = request.nextUrl.origin;
-    // Fire and forget - don't await
+  // Log API call using waitUntil to ensure completion
+  const baseUrl = request.nextUrl.origin;
+
+  event.waitUntil(
     fetch(`${baseUrl}/api/log-api`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
-        // Pass the original client info
         "x-original-ip": ipAddress,
         "x-original-ua": userAgent,
       },
@@ -52,12 +50,10 @@ export async function middleware(request: NextRequest) {
         ipAddress,
         userAgent,
       }),
-    }).catch(() => {
-      // Silently fail
-    });
-  } catch {
-    // Silently fail
-  }
+    }).catch((error) => {
+      console.error("Failed to log API call:", error);
+    })
+  );
 
   return response;
 }

@@ -4,22 +4,8 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { ArrowLeft, Clock, Gauge } from "lucide-react";
 import Link from "next/link";
-
-interface PaceGroup {
-  id: string;
-  groupNumber: number;
-  name: string;
-  timeFull: number;
-  timeHalf: number;
-  time10k: number;
-  time5k: number;
-  paceFull: number;
-  paceHalf: number;
-  pace10k: number;
-  pace5k: number;
-  pace1km: number;
-  paceRecovery: number;
-}
+import { RacePredictor } from "@/components/race-predictor";
+import { PaceGroup } from "@/lib/pace-utils";
 
 export default function PaceChartPage() {
   const [paceGroups, setPaceGroups] = useState<PaceGroup[]>([]);
@@ -98,6 +84,9 @@ export default function PaceChartPage() {
         </Link>
         <h1 className="text-2xl font-bold text-text-primary">페이스 차트</h1>
       </header>
+
+      {/* Race Predictor */}
+      <RacePredictor paceGroups={paceGroups} />
 
       {/* View Toggle */}
       <div className="flex bg-surface-elevated rounded-xl p-1">

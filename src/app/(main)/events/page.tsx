@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { Calendar, MapPin, ChevronRight, Trophy } from "lucide-react";
+import { Calendar, MapPin, Trophy } from "lucide-react";
 import Link from "next/link";
 
 interface MarathonEvent {
@@ -90,7 +90,8 @@ export default function EventsPage() {
     const month = date.getMonth() + 1;
     const day = date.getDate();
     const weekday = ["일", "월", "화", "수", "목", "금", "토"][date.getDay()];
-    return { month, day, weekday };
+    const formatted = `${month}월 ${day}일 (${weekday})`;
+    return { month, day, weekday, formatted };
   };
 
   const getDistanceLabel = (distance: number) => {
@@ -169,58 +170,60 @@ export default function EventsPage() {
               </h2>
               <div className="space-y-3">
                 {monthEvents.map((event) => {
-                  const { day, weekday } = formatDate(event.date!);
+                  const { formatted } = formatDate(event.date!);
                   return (
                     <Link
                       key={event.id}
                       href={`/records/new?eventId=${event.id}`}
                     >
-                      <Card variant="interactive" className="flex gap-4">
-                        {/* Date Badge */}
-                        <div className="flex-shrink-0 w-14 text-center">
-                          <div className="text-2xl font-bold text-primary">
-                            {day}
+                      <Card variant="interactive">
+                        <div className="flex items-center gap-3">
+                          {/* Left: Date Badge */}
+                          <div className="w-12 h-12 rounded-xl bg-primary/10 flex flex-col items-center justify-center shrink-0">
+                            <span className="text-lg font-bold text-primary leading-none">
+                              {new Date(event.date!).getDate()}
+                            </span>
+                            <span className="text-[10px] text-primary/70">
+                              {["일", "월", "화", "수", "목", "금", "토"][new Date(event.date!).getDay()]}
+                            </span>
                           </div>
-                          <div className="text-xs text-text-tertiary">
-                            {weekday}요일
-                          </div>
-                        </div>
 
-                        {/* Event Info */}
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start gap-2">
-                            <h3 className="font-semibold text-text-primary line-clamp-1">
-                              {event.name}
-                            </h3>
-                            {event.isOfficial && (
-                              <Trophy className="w-4 h-4 text-warning flex-shrink-0 mt-0.5" />
-                            )}
-                          </div>
-                          {event.location && (
-                            <p className="text-sm text-text-tertiary flex items-center gap-1 mt-1">
-                              <MapPin className="w-3 h-3" />
-                              {event.location}
+                          {/* Middle: Event Info */}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-1.5">
+                              {event.isOfficial && (
+                                <Trophy className="w-4 h-4 text-warning shrink-0" />
+                              )}
+                              <h3 className="font-medium text-text-primary truncate">
+                                {event.name}
+                              </h3>
+                            </div>
+                            <p className="text-sm text-text-tertiary mt-0.5">
+                              {formatted}
+                              {event.location && ` • ${event.location}`}
                             </p>
-                          )}
-                          <div className="flex gap-2 mt-2">
-                            {event.courses ? (
-                              event.courses.split(",").map((course) => (
-                                <span
-                                  key={course}
-                                  className="text-xs px-2 py-0.5 bg-surface-elevated rounded text-text-secondary"
-                                >
-                                  {course.trim()}
+                          </div>
+
+                          {/* Right: Distance */}
+                          <div className="text-right shrink-0">
+                            <div className="flex flex-wrap gap-1 justify-end">
+                              {event.courses ? (
+                                event.courses.split(",").slice(0, 2).map((course) => (
+                                  <span
+                                    key={course}
+                                    className="text-xs px-2 py-1 bg-surface-elevated rounded-md text-text-secondary font-medium"
+                                  >
+                                    {course.trim()}
+                                  </span>
+                                ))
+                              ) : (
+                                <span className="text-xs px-2 py-1 bg-surface-elevated rounded-md text-text-secondary font-medium">
+                                  {getDistanceLabel(event.distance)}
                                 </span>
-                              ))
-                            ) : (
-                              <span className="text-xs px-2 py-0.5 bg-surface-elevated rounded text-text-secondary">
-                                {getDistanceLabel(event.distance)}
-                              </span>
-                            )}
+                              )}
+                            </div>
                           </div>
                         </div>
-
-                        <ChevronRight className="w-5 h-5 text-text-tertiary flex-shrink-0 self-center" />
                       </Card>
                     </Link>
                   );

@@ -104,9 +104,9 @@ export default async function AdminPage() {
     },
   });
 
-  // Fetch all events
+  // Fetch all events (날짜 내림차순)
   const events = await prisma.marathonEvent.findMany({
-    orderBy: { createdAt: "desc" },
+    orderBy: { date: "desc" },
     include: {
       _count: {
         select: { runningLogs: true },

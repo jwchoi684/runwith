@@ -1479,7 +1479,7 @@ export function AdminDashboard({
           {/* Users View */}
           {activeView === "users" && (
             <div className="space-y-4">
-              <div className="relative max-w-md">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="text"
@@ -1495,66 +1495,109 @@ export function AdminDashboard({
                   <p className="text-center text-text-tertiary py-8">사용자가 없습니다</p>
                 </Card>
               ) : (
-                <Card className="overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[800px]">
-                      <thead>
-                        <tr className="bg-surface-elevated border-b border-border">
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">이메일</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">역할</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">기록</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">크루</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">가입일</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">마지막 접속</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredUsers.map((user) => (
-                          <tr
-                            key={user.id}
-                            onClick={() => openUserDetail(user.id)}
-                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
-                          >
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                {user.image ? (
-                                  <Image src={user.image} alt="" width={36} height={36} className="rounded-full" />
-                                ) : (
-                                  <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
-                                    {user.name?.[0]?.toUpperCase() || "U"}
-                                  </div>
-                                )}
-                                <div className="flex items-center gap-2">
-                                  <span className="font-medium text-text-primary">{user.name || "Unknown"}</span>
-                                  {getProviderBadge(user.accounts)}
-                                </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-text-secondary">{user.email}</td>
-                            <td className="px-4 py-3 text-center">
-                              {user.role === "admin" ? (
-                                <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">Admin</span>
-                              ) : (
-                                <span className="text-xs text-text-tertiary">User</span>
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {filteredUsers.map((user) => (
+                      <Card
+                        key={user.id}
+                        className="p-4 cursor-pointer hover:shadow-toss-lg transition-shadow"
+                        onClick={() => openUserDetail(user.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          {user.image ? (
+                            <Image src={user.image} alt="" width={44} height={44} className="rounded-full" />
+                          ) : (
+                            <div className="w-11 h-11 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium text-lg">
+                              {user.name?.[0]?.toUpperCase() || "U"}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-text-primary truncate">{user.name || "Unknown"}</span>
+                              {getProviderBadge(user.accounts)}
+                              {user.role === "admin" && (
+                                <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">Admin</span>
                               )}
-                            </td>
-                            <td className="px-4 py-3 text-center text-sm text-text-secondary">{user._count.runningLogs}</td>
-                            <td className="px-4 py-3 text-center text-sm text-text-secondary">{user._count.crews}</td>
-                            <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(user.createdAt)}</td>
-                            <td className="px-4 py-3 text-sm text-text-tertiary">
-                              {user.lastAccessedAt ? formatRelativeTime(new Date(user.lastAccessedAt)) : "-"}
-                            </td>
-                            <td className="px-4 py-3 text-center">
-                              <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </div>
+                            <p className="text-sm text-text-tertiary truncate">{user.email}</p>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-text-tertiary flex-shrink-0" />
+                        </div>
+                        <div className="flex items-center gap-4 mt-3 pt-3 border-t border-border text-xs text-text-tertiary">
+                          <span>기록 {user._count.runningLogs}</span>
+                          <span>크루 {user._count.crews}</span>
+                          <span className="ml-auto">{formatDate(user.createdAt)}</span>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                </Card>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[700px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">이메일</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">역할</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">기록</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">크루</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden xl:table-cell">가입일</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden xl:table-cell">마지막 접속</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredUsers.map((user) => (
+                            <tr
+                              key={user.id}
+                              onClick={() => openUserDetail(user.id)}
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  {user.image ? (
+                                    <Image src={user.image} alt="" width={36} height={36} className="rounded-full" />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                                      {user.name?.[0]?.toUpperCase() || "U"}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-medium text-text-primary">{user.name || "Unknown"}</span>
+                                      {getProviderBadge(user.accounts)}
+                                    </div>
+                                    <p className="text-xs text-text-tertiary lg:hidden">{user.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-secondary hidden lg:table-cell">{user.email}</td>
+                              <td className="px-4 py-3 text-center">
+                                {user.role === "admin" ? (
+                                  <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">Admin</span>
+                                ) : (
+                                  <span className="text-xs text-text-tertiary">User</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-center text-sm text-text-secondary">{user._count.runningLogs}</td>
+                              <td className="px-4 py-3 text-center text-sm text-text-secondary">{user._count.crews}</td>
+                              <td className="px-4 py-3 text-sm text-text-tertiary hidden xl:table-cell">{formatDate(user.createdAt)}</td>
+                              <td className="px-4 py-3 text-sm text-text-tertiary hidden xl:table-cell">
+                                {user.lastAccessedAt ? formatRelativeTime(new Date(user.lastAccessedAt)) : "-"}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
               )}
             </div>
           )}
@@ -1567,53 +1610,90 @@ export function AdminDashboard({
                   <p className="text-center text-text-tertiary py-8">기록이 없습니다</p>
                 </Card>
               ) : (
-                <Card className="overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[900px]">
-                      <thead>
-                        <tr className="bg-surface-elevated border-b border-border">
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회/기록</th>
-                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">거리</th>
-                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">시간</th>
-                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">페이스</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {recentRecords.map((record) => (
-                          <tr
-                            key={record.id}
-                            onClick={() => openUserDetail(record.user.id)}
-                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
-                          >
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                {record.user.image ? (
-                                  <Image src={record.user.image} alt="" width={36} height={36} className="rounded-full" />
-                                ) : (
-                                  <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
-                                    {record.user.name?.[0]?.toUpperCase() || "U"}
-                                  </div>
-                                )}
-                                <span className="font-medium text-text-primary">{record.user.name || record.user.email}</span>
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {recentRecords.map((record) => (
+                      <Card
+                        key={record.id}
+                        className="p-4 cursor-pointer hover:shadow-toss-lg transition-shadow"
+                        onClick={() => openUserDetail(record.user.id)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {record.user.image ? (
+                              <Image src={record.user.image} alt="" width={40} height={40} className="rounded-full" />
+                            ) : (
+                              <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                                {record.user.name?.[0]?.toUpperCase() || "U"}
                               </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-text-secondary">{record.event?.name || "개인 기록"}</td>
-                            <td className="px-4 py-3 text-right text-sm font-medium text-text-primary">{record.distance.toFixed(2)} km</td>
-                            <td className="px-4 py-3 text-right text-sm font-mono text-primary font-medium">{formatDuration(record.duration)}</td>
-                            <td className="px-4 py-3 text-right text-sm text-text-secondary">{formatPace(record.pace)} /km</td>
-                            <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(record.date)}</td>
-                            <td className="px-4 py-3 text-center">
-                              <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            )}
+                            <div>
+                              <p className="font-medium text-text-primary">{record.user.name || record.user.email}</p>
+                              <p className="text-xs text-text-tertiary">{record.event?.name || "개인 기록"}</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="text-lg font-bold text-primary tabular-nums">{formatDuration(record.duration)}</p>
+                            <p className="text-xs text-text-tertiary tabular-nums">{formatPace(record.pace)} /km</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-xs text-text-tertiary">
+                          <span className="font-medium text-text-primary">{record.distance.toFixed(2)} km</span>
+                          <span>{formatDate(record.date)}</span>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                </Card>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[600px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">대회/기록</th>
+                            <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">거리</th>
+                            <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">시간</th>
+                            <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">페이스</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {recentRecords.map((record) => (
+                            <tr
+                              key={record.id}
+                              onClick={() => openUserDetail(record.user.id)}
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  {record.user.image ? (
+                                    <Image src={record.user.image} alt="" width={36} height={36} className="rounded-full" />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                                      {record.user.name?.[0]?.toUpperCase() || "U"}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="font-medium text-text-primary">{record.user.name || record.user.email}</span>
+                                    <p className="text-xs text-text-tertiary lg:hidden">{record.event?.name || "개인 기록"}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-secondary hidden lg:table-cell">{record.event?.name || "개인 기록"}</td>
+                              <td className="px-4 py-3 text-right text-sm font-medium text-text-primary">{record.distance.toFixed(2)} km</td>
+                              <td className="px-4 py-3 text-right text-sm font-mono text-primary font-medium">{formatDuration(record.duration)}</td>
+                              <td className="px-4 py-3 text-right text-sm text-text-secondary hidden lg:table-cell">{formatPace(record.pace)} /km</td>
+                              <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(record.date)}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
               )}
             </div>
           )}
@@ -1621,7 +1701,7 @@ export function AdminDashboard({
           {/* Crews View */}
           {activeView === "crews" && (
             <div className="space-y-4">
-              <div className="relative max-w-md">
+              <div className="relative">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="text"
@@ -1637,66 +1717,110 @@ export function AdminDashboard({
                   <p className="text-center text-text-tertiary py-8">크루가 없습니다</p>
                 </Card>
               ) : (
-                <Card className="overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[800px]">
-                      <thead>
-                        <tr className="bg-surface-elevated border-b border-border">
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">크루</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">설명</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">크루장</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">멤버</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">공개</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">생성일</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredCrews.map((crew) => (
-                          <tr
-                            key={crew.id}
-                            onClick={() => openCrewDetail(crew.id)}
-                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
-                          >
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold">
-                                  {crew.name.charAt(0)}
-                                </div>
-                                <span className="font-medium text-text-primary">{crew.name}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-sm text-text-secondary max-w-[200px] truncate">
-                              {crew.description || "-"}
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                {crew.owner.image ? (
-                                  <Image src={crew.owner.image} alt="" width={24} height={24} className="rounded-full" />
-                                ) : (
-                                  <div className="w-6 h-6 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary text-xs font-medium">
-                                    {crew.owner.name?.[0]?.toUpperCase() || "U"}
-                                  </div>
-                                )}
-                                <span className="text-sm text-text-secondary">{crew.owner.name || crew.owner.email}</span>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-center text-sm font-medium text-text-primary">{crew._count.members}</td>
-                            <td className="px-4 py-3 text-center">
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {filteredCrews.map((crew) => (
+                      <Card
+                        key={crew.id}
+                        className="p-4 cursor-pointer hover:shadow-toss-lg transition-shadow"
+                        onClick={() => openCrewDetail(crew.id)}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white text-lg font-bold">
+                            {crew.name.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="font-medium text-text-primary truncate">{crew.name}</span>
                               {crew.isPublic ? (
-                                <span className="px-2 py-1 bg-success/10 text-success text-xs font-medium rounded-full">공개</span>
+                                <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공개</span>
                               ) : (
-                                <span className="px-2 py-1 bg-warning/10 text-warning text-xs font-medium rounded-full">비공개</span>
+                                <span className="px-2 py-0.5 bg-warning/10 text-warning text-xs font-medium rounded-full">비공개</span>
                               )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(crew.createdAt)}</td>
-                            <td className="px-4 py-3 text-center">
-                              <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
-                            </td>
+                            </div>
+                            <p className="text-sm text-text-tertiary truncate">{crew.description || "설명 없음"}</p>
+                          </div>
+                          <ChevronRight className="w-5 h-5 text-text-tertiary flex-shrink-0" />
+                        </div>
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border text-xs text-text-tertiary">
+                          <div className="flex items-center gap-2">
+                            {crew.owner.image ? (
+                              <Image src={crew.owner.image} alt="" width={20} height={20} className="rounded-full" />
+                            ) : (
+                              <div className="w-5 h-5 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary text-xs">
+                                {crew.owner.name?.[0]?.toUpperCase() || "U"}
+                              </div>
+                            )}
+                            <span>{crew.owner.name || crew.owner.email}</span>
+                          </div>
+                          <span>멤버 {crew._count.members}명</span>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[600px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">크루</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">설명</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">크루장</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">멤버</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">공개</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden xl:table-cell">생성일</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {filteredCrews.map((crew) => (
+                            <tr
+                              key={crew.id}
+                              onClick={() => openCrewDetail(crew.id)}
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold">
+                                    {crew.name.charAt(0)}
+                                  </div>
+                                  <span className="font-medium text-text-primary">{crew.name}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-secondary max-w-[200px] truncate hidden lg:table-cell">
+                                {crew.description || "-"}
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  {crew.owner.image ? (
+                                    <Image src={crew.owner.image} alt="" width={24} height={24} className="rounded-full" />
+                                  ) : (
+                                    <div className="w-6 h-6 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary text-xs font-medium">
+                                      {crew.owner.name?.[0]?.toUpperCase() || "U"}
+                                    </div>
+                                  )}
+                                  <span className="text-sm text-text-secondary">{crew.owner.name || crew.owner.email}</span>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center text-sm font-medium text-text-primary">{crew._count.members}</td>
+                              <td className="px-4 py-3 text-center">
+                                {crew.isPublic ? (
+                                  <span className="px-2 py-1 bg-success/10 text-success text-xs font-medium rounded-full">공개</span>
+                                ) : (
+                                  <span className="px-2 py-1 bg-warning/10 text-warning text-xs font-medium rounded-full">비공개</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-tertiary hidden xl:table-cell">{formatDate(crew.createdAt)}</td>
+                              <td className="px-4 py-3 text-center">
+                                <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
                   </div>
                 </Card>
               )}
@@ -1763,84 +1887,56 @@ export function AdminDashboard({
                 </div>
               )}
 
-              <Card className="overflow-hidden">
-                {filteredEvents.length === 0 ? (
-                  <p className="text-center text-text-tertiary py-8">대회가 없습니다</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[900px]">
-                      <thead>
-                        <tr className="bg-surface-elevated border-b border-border">
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary w-10">
-                            <button
-                              onClick={toggleAllEvents}
-                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                selectedEventIds.size === filteredEvents.length && filteredEvents.length > 0
-                                  ? "bg-primary border-primary text-white"
-                                  : selectedEventIds.size > 0
-                                  ? "bg-primary/50 border-primary text-white"
-                                  : "border-border hover:border-text-secondary"
-                              }`}
-                            >
-                              {selectedEventIds.size > 0 && (
-                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                </svg>
-                              )}
-                            </button>
-                          </th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회명</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">지역</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">장소</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">종목</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">기록</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">작업</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredEvents.map((event) => (
-                          <tr
-                            key={event.id}
-                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated transition-colors"
+              {filteredEvents.length === 0 ? (
+                <Card className="p-8">
+                  <p className="text-center text-text-tertiary">대회가 없습니다</p>
+                </Card>
+              ) : (
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {filteredEvents.map((event) => (
+                      <Card key={event.id} className="p-4">
+                        <div className="flex items-start gap-3">
+                          <button
+                            onClick={() => toggleEventSelection(event.id)}
+                            className={`w-5 h-5 rounded border-2 flex-shrink-0 flex items-center justify-center transition-colors mt-0.5 ${
+                              selectedEventIds.has(event.id)
+                                ? "bg-primary border-primary text-white"
+                                : "border-border hover:border-text-secondary"
+                            }`}
                           >
-                            <td className="px-4 py-3">
-                              <button
-                                onClick={() => toggleEventSelection(event.id)}
-                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                                  selectedEventIds.has(event.id)
-                                    ? "bg-primary border-primary text-white"
-                                    : "border-border hover:border-text-secondary"
-                                }`}
-                              >
-                                {selectedEventIds.has(event.id) && (
-                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                                  </svg>
-                                )}
-                              </button>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-text-primary">{event.name}</span>
-                                {event.isOfficial && (
-                                  <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-center text-sm">
+                            {selectedEventIds.has(event.id) && (
+                              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </button>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap mb-1">
+                              <span className="font-medium text-text-primary">{event.name}</span>
+                              {event.isOfficial && (
+                                <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
+                              )}
+                            </div>
+                            <div className="flex items-center gap-2 mb-2">
                               {event.region === "international" ? (
                                 <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">해외</span>
                               ) : (
                                 <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">국내</span>
                               )}
-                            </td>
-                            <td className="px-4 py-3 text-sm text-text-secondary">{event.location || "-"}</td>
-                            <td className="px-4 py-3 text-sm text-text-primary">{event.courses || "-"}</td>
-                            <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(event.date)}</td>
-                            <td className="px-4 py-3 text-center text-sm text-text-secondary">{event._count.runningLogs}</td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center justify-center gap-1">
+                              {event.courses && (
+                                <span className="text-xs text-text-secondary">{event.courses}</span>
+                              )}
+                            </div>
+                            <div className="text-sm text-text-secondary mb-2">
+                              {event.location && <span>{event.location}</span>}
+                              {event.location && event.date && <span className="mx-1">·</span>}
+                              {event.date && <span>{formatDate(event.date)}</span>}
+                            </div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-xs text-text-tertiary">기록 {event._count.runningLogs}개</span>
+                              <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => openEventModal(event)}
                                   className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
@@ -1859,14 +1955,116 @@ export function AdminDashboard({
                                   )}
                                 </button>
                               </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                )}
-              </Card>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[900px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary w-10">
+                              <button
+                                onClick={toggleAllEvents}
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                  selectedEventIds.size === filteredEvents.length && filteredEvents.length > 0
+                                    ? "bg-primary border-primary text-white"
+                                    : selectedEventIds.size > 0
+                                    ? "bg-primary/50 border-primary text-white"
+                                    : "border-border hover:border-text-secondary"
+                                }`}
+                              >
+                                {selectedEventIds.size > 0 && (
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </button>
+                            </th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회명</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">지역</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">장소</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">종목</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">기록</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">작업</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredEvents.map((event) => (
+                            <tr
+                              key={event.id}
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <button
+                                  onClick={() => toggleEventSelection(event.id)}
+                                  className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                    selectedEventIds.has(event.id)
+                                      ? "bg-primary border-primary text-white"
+                                      : "border-border hover:border-text-secondary"
+                                  }`}
+                                >
+                                  {selectedEventIds.has(event.id) && (
+                                    <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-text-primary">{event.name}</span>
+                                  {event.isOfficial && (
+                                    <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center text-sm">
+                                {event.region === "international" ? (
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">해외</span>
+                                ) : (
+                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">국내</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-secondary">{event.location || "-"}</td>
+                              <td className="px-4 py-3 text-sm text-text-primary">{event.courses || "-"}</td>
+                              <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(event.date)}</td>
+                              <td className="px-4 py-3 text-center text-sm text-text-secondary">{event._count.runningLogs}</td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    onClick={() => openEventModal(event)}
+                                    className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeleteEvent(event.id)}
+                                    disabled={deletingEventId === event.id}
+                                    className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
+                                  >
+                                    {deletingEventId === event.id ? (
+                                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
+              )}
             </div>
           )}
 
@@ -1899,71 +2097,120 @@ export function AdminDashboard({
                 ))}
               </div>
 
-              <Card className="overflow-hidden">
-                {filteredRankings.length === 0 ? (
-                  <p className="text-center text-text-tertiary py-8">랭킹 데이터가 없습니다</p>
-                ) : (
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[700px]">
-                      <thead>
-                        <tr className="bg-surface-elevated border-b border-border">
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary w-16">순위</th>
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
-                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">총 거리</th>
-                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">총 시간</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">러닝 횟수</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {filteredRankings.map((rank, index) => (
-                          <tr
-                            key={rank.userId}
-                            onClick={() => openUserDetail(rank.userId)}
-                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
-                          >
-                            <td className="px-4 py-3 text-center">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold mx-auto ${
-                                index === 0 ? "bg-yellow-100 text-yellow-700" :
-                                index === 1 ? "bg-gray-100 text-gray-600" :
-                                index === 2 ? "bg-orange-100 text-orange-700" :
-                                "bg-surface-elevated text-text-tertiary"
-                              }`}>
-                                {index < 3 ? (
-                                  <Medal className="w-4 h-4" />
-                                ) : (
-                                  <span className="text-sm">{index + 1}</span>
-                                )}
-                              </div>
-                            </td>
-                            <td className="px-4 py-3">
-                              <div className="flex items-center gap-3">
-                                {rank.userImage ? (
-                                  <Image src={rank.userImage} alt="" width={36} height={36} className="rounded-full" />
-                                ) : (
-                                  <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
-                                    {rank.userName?.[0]?.toUpperCase() || "U"}
-                                  </div>
-                                )}
-                                <div>
-                                  <span className="font-medium text-text-primary">{rank.userName}</span>
-                                  <p className="text-xs text-text-tertiary">{rank.userEmail}</p>
+              {filteredRankings.length === 0 ? (
+                <Card className="p-8">
+                  <p className="text-center text-text-tertiary">랭킹 데이터가 없습니다</p>
+                </Card>
+              ) : (
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {filteredRankings.map((rank, index) => (
+                      <Card
+                        key={rank.userId}
+                        onClick={() => openUserDetail(rank.userId)}
+                        className="p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex-shrink-0 flex items-center justify-center font-bold ${
+                            index === 0 ? "bg-yellow-100 text-yellow-700" :
+                            index === 1 ? "bg-gray-100 text-gray-600" :
+                            index === 2 ? "bg-orange-100 text-orange-700" :
+                            "bg-surface-elevated text-text-tertiary"
+                          }`}>
+                            {index < 3 ? (
+                              <Medal className="w-5 h-5" />
+                            ) : (
+                              <span className="text-sm">{index + 1}</span>
+                            )}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              {rank.userImage ? (
+                                <Image src={rank.userImage} alt="" width={28} height={28} className="rounded-full" />
+                              ) : (
+                                <div className="w-7 h-7 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary text-xs font-medium">
+                                  {rank.userName?.[0]?.toUpperCase() || "U"}
                                 </div>
-                              </div>
-                            </td>
-                            <td className="px-4 py-3 text-right font-bold text-primary">{rank.totalDistance.toFixed(3)} km</td>
-                            <td className="px-4 py-3 text-right text-sm font-mono text-text-secondary">{formatDuration(rank.totalDuration)}</td>
-                            <td className="px-4 py-3 text-center text-sm text-text-secondary">{rank.totalRuns}회</td>
-                            <td className="px-4 py-3 text-center">
-                              <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                              )}
+                              <span className="font-medium text-text-primary truncate">{rank.userName}</span>
+                            </div>
+                            <div className="flex items-center gap-3 mt-1">
+                              <span className="text-sm font-bold text-primary">{rank.totalDistance.toFixed(1)} km</span>
+                              <span className="text-xs text-text-tertiary">{formatDuration(rank.totalDuration)}</span>
+                              <span className="text-xs text-text-tertiary">{rank.totalRuns}회</span>
+                            </div>
+                          </div>
+                          <ChevronRight className="w-4 h-4 text-text-tertiary flex-shrink-0" />
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                )}
-              </Card>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[700px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary w-16">순위</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
+                            <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">총 거리</th>
+                            <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">총 시간</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">러닝 횟수</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {filteredRankings.map((rank, index) => (
+                            <tr
+                              key={rank.userId}
+                              onClick={() => openUserDetail(rank.userId)}
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                            >
+                              <td className="px-4 py-3 text-center">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold mx-auto ${
+                                  index === 0 ? "bg-yellow-100 text-yellow-700" :
+                                  index === 1 ? "bg-gray-100 text-gray-600" :
+                                  index === 2 ? "bg-orange-100 text-orange-700" :
+                                  "bg-surface-elevated text-text-tertiary"
+                                }`}>
+                                  {index < 3 ? (
+                                    <Medal className="w-4 h-4" />
+                                  ) : (
+                                    <span className="text-sm">{index + 1}</span>
+                                  )}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  {rank.userImage ? (
+                                    <Image src={rank.userImage} alt="" width={36} height={36} className="rounded-full" />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                                      {rank.userName?.[0]?.toUpperCase() || "U"}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="font-medium text-text-primary">{rank.userName}</span>
+                                    <p className="text-xs text-text-tertiary">{rank.userEmail}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-right font-bold text-primary">{rank.totalDistance.toFixed(3)} km</td>
+                              <td className="px-4 py-3 text-right text-sm font-mono text-text-secondary">{formatDuration(rank.totalDuration)}</td>
+                              <td className="px-4 py-3 text-center text-sm text-text-secondary">{rank.totalRuns}회</td>
+                              <td className="px-4 py-3 text-center">
+                                <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
+              )}
             </div>
           )}
 
@@ -1988,99 +2235,184 @@ export function AdminDashboard({
                   <p className="text-sm text-text-tertiary">초기 데이터 설정 버튼을 눌러 10개 그룹을 생성하세요</p>
                 </Card>
               ) : (
-                <Card className="overflow-hidden">
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[900px]">
-                      <thead>
-                        <tr className="bg-surface-elevated border-b border-border">
-                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary sticky left-0 bg-surface-elevated">그룹</th>
-                          <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary" colSpan={4}>목표 시간</th>
-                          <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary" colSpan={6}>페이스</th>
-                          <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary">작업</th>
-                        </tr>
-                        <tr className="bg-surface-elevated/50 border-b border-border">
-                          <th className="text-left px-4 py-2 text-xs font-medium text-text-tertiary sticky left-0 bg-surface-elevated/50"></th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Full</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Half</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">10K</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">5K</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Full</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Half</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">10K</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">5K</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">1km</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-primary">Rec.</th>
-                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary"></th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {paceGroups.map((group, index) => (
-                          <tr
-                            key={group.id}
-                            className={`border-b border-border last:border-b-0 ${
-                              index % 2 === 0 ? "bg-surface" : "bg-surface-elevated/50"
-                            }`}
-                          >
-                            <td className="px-4 py-3 font-medium text-text-primary sticky left-0 bg-inherit">
-                              {group.name}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.timeFull)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.timeHalf)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.time10k)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.time5k)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.paceFull)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.paceHalf)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.pace10k)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.pace5k)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
-                              {secondsToTimeStr(group.pace1km)}
-                            </td>
-                            <td className="px-3 py-3 text-center text-primary font-mono text-sm font-medium">
-                              {secondsToTimeStr(group.paceRecovery)}
-                            </td>
-                            <td className="px-3 py-3 text-center">
-                              <div className="flex items-center justify-center gap-1">
-                                <button
-                                  onClick={() => openPaceGroupModal(group)}
-                                  className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeletePaceGroup(group.id)}
-                                  disabled={deletingPaceGroupId === group.id}
-                                  className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                  {deletingPaceGroupId === group.id ? (
-                                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
-                                  ) : (
-                                    <Trash2 className="w-4 h-4" />
-                                  )}
-                                </button>
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {paceGroups.map((group) => (
+                      <Card key={group.id} className="p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="font-bold text-lg text-primary">{group.name}</span>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={() => openPaceGroupModal(group)}
+                              className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleDeletePaceGroup(group.id)}
+                              disabled={deletingPaceGroupId === group.id}
+                              className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {deletingPaceGroupId === group.id ? (
+                                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
+                          </div>
+                        </div>
+                        <div className="space-y-3">
+                          <div>
+                            <p className="text-xs text-text-tertiary mb-1">목표 시간</p>
+                            <div className="grid grid-cols-4 gap-2 text-center">
+                              <div>
+                                <p className="text-xs text-text-tertiary">Full</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.timeFull)}</p>
                               </div>
-                            </td>
-                          </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                              <div>
+                                <p className="text-xs text-text-tertiary">Half</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.timeHalf)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-text-tertiary">10K</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.time10k)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-text-tertiary">5K</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.time5k)}</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="border-t border-border pt-3">
+                            <p className="text-xs text-text-tertiary mb-1">페이스 (분/km)</p>
+                            <div className="grid grid-cols-3 gap-2 text-center">
+                              <div>
+                                <p className="text-xs text-text-tertiary">Full</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.paceFull)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-text-tertiary">Half</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.paceHalf)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-text-tertiary">10K</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.pace10k)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-text-tertiary">5K</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.pace5k)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-text-tertiary">1km</p>
+                                <p className="font-mono text-sm text-text-primary">{secondsToTimeStr(group.pace1km)}</p>
+                              </div>
+                              <div>
+                                <p className="text-xs text-primary font-medium">Rec.</p>
+                                <p className="font-mono text-sm text-primary font-medium">{secondsToTimeStr(group.paceRecovery)}</p>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
                   </div>
-                </Card>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[900px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary sticky left-0 bg-surface-elevated">그룹</th>
+                            <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary" colSpan={4}>목표 시간</th>
+                            <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary" colSpan={6}>페이스</th>
+                            <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary">작업</th>
+                          </tr>
+                          <tr className="bg-surface-elevated/50 border-b border-border">
+                            <th className="text-left px-4 py-2 text-xs font-medium text-text-tertiary sticky left-0 bg-surface-elevated/50"></th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Full</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Half</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">10K</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">5K</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Full</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Half</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">10K</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">5K</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">1km</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-primary">Rec.</th>
+                            <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {paceGroups.map((group, index) => (
+                            <tr
+                              key={group.id}
+                              className={`border-b border-border last:border-b-0 ${
+                                index % 2 === 0 ? "bg-surface" : "bg-surface-elevated/50"
+                              }`}
+                            >
+                              <td className="px-4 py-3 font-medium text-text-primary sticky left-0 bg-inherit">
+                                {group.name}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.timeFull)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.timeHalf)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.time10k)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.time5k)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.paceFull)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.paceHalf)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.pace10k)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.pace5k)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                                {secondsToTimeStr(group.pace1km)}
+                              </td>
+                              <td className="px-3 py-3 text-center text-primary font-mono text-sm font-medium">
+                                {secondsToTimeStr(group.paceRecovery)}
+                              </td>
+                              <td className="px-3 py-3 text-center">
+                                <div className="flex items-center justify-center gap-1">
+                                  <button
+                                    onClick={() => openPaceGroupModal(group)}
+                                    className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                  >
+                                    <Edit2 className="w-4 h-4" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleDeletePaceGroup(group.id)}
+                                    disabled={deletingPaceGroupId === group.id}
+                                    className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
+                                  >
+                                    {deletingPaceGroupId === group.id ? (
+                                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                                    ) : (
+                                      <Trash2 className="w-4 h-4" />
+                                    )}
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
               )}
 
               <Card className="p-4">

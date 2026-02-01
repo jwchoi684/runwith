@@ -11,12 +11,19 @@ import {
   Sun,
   CloudRain,
   Snowflake,
-  Calendar,
   Timer,
   Gauge,
   MapPin,
+  Trophy,
 } from "lucide-react";
 import Link from "next/link";
+
+interface MarathonEvent {
+  id: string;
+  name: string;
+  location: string | null;
+  distance: number;
+}
 
 interface RunningLog {
   id: string;
@@ -27,6 +34,7 @@ interface RunningLog {
   notes: string | null;
   weather: string | null;
   feeling: number | null;
+  event: MarathonEvent | null;
 }
 
 const weatherIcons: Record<string, typeof Sun> = {
@@ -125,6 +133,26 @@ export function RecordDetail({ record }: { record: RunningLog }) {
           <Trash2 className="w-5 h-5" />
         </Button>
       </header>
+
+      {/* Event Info (if race record) */}
+      {record.event && (
+        <Card className="bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-yellow-500/20 flex items-center justify-center">
+              <Trophy className="w-6 h-6 text-yellow-500" />
+            </div>
+            <div>
+              <p className="font-bold text-text-primary">{record.event.name}</p>
+              {record.event.location && (
+                <p className="text-sm text-text-tertiary flex items-center gap-1 mt-0.5">
+                  <MapPin className="w-3 h-3" />
+                  {record.event.location}
+                </p>
+              )}
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Main Stats */}
       <Card className="text-center py-6">

@@ -13,6 +13,9 @@ export async function GET() {
   const records = await prisma.runningLog.findMany({
     where: { userId: session.user.id },
     orderBy: { date: "desc" },
+    include: {
+      event: true,
+    },
   });
 
   return NextResponse.json(records);
@@ -27,7 +30,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { date, distance, duration, notes, weather, feeling } = body;
+  const { date, distance, duration, notes, weather, feeling, eventId } = body;
 
   // Parse distance with 3 decimal precision
   const distanceValue = Math.round(parseFloat(distance) * 1000) / 1000;
@@ -45,6 +48,10 @@ export async function POST(request: NextRequest) {
       notes,
       weather,
       feeling: feeling ? parseInt(feeling) : null,
+      eventId: eventId || null,
+    },
+    include: {
+      event: true,
     },
   });
 

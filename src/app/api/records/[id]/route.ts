@@ -15,6 +15,7 @@ export async function GET(request: NextRequest, { params }: { params: Params }) 
 
   const record = await prisma.runningLog.findFirst({
     where: { id, userId: session.user.id },
+    include: { event: true },
   });
 
   if (!record) {

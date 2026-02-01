@@ -2,7 +2,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Trophy } from "lucide-react";
 import Link from "next/link";
 
 export default async function RecordsPage() {
@@ -11,6 +11,9 @@ export default async function RecordsPage() {
   const records = await prisma.runningLog.findMany({
     where: { userId: session?.user?.id },
     orderBy: { date: "desc" },
+    include: {
+      event: true,
+    },
   });
 
   // Format duration to HH:MM:SS
@@ -71,16 +74,32 @@ export default async function RecordsPage() {
             <Link key={record.id} href={`/records/${record.id}`}>
               <Card variant="interactive">
                 <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium text-text-primary">
-                      {record.distance.toFixed(3)} km
-                    </p>
-                    <p className="text-sm text-text-tertiary mt-0.5">
-                      {formatDate(record.date)}
-                      {record.notes && ` • ${record.notes}`}
-                    </p>
+                  <div className="flex-1 min-w-0">
+                    {record.event ? (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Trophy className="w-4 h-4 text-yellow-500 shrink-0" />
+                          <p className="font-medium text-text-primary truncate">
+                            {record.event.name}
+                          </p>
+                        </div>
+                        <p className="text-sm text-text-tertiary mt-0.5">
+                          {formatDate(record.date)} • {record.distance.toFixed(3)} km
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <p className="font-medium text-text-primary">
+                          {record.distance.toFixed(3)} km
+                        </p>
+                        <p className="text-sm text-text-tertiary mt-0.5">
+                          {formatDate(record.date)}
+                          {record.notes && ` • ${record.notes}`}
+                        </p>
+                      </>
+                    )}
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0 ml-3">
                     <p className="text-xl font-bold text-primary">
                       {formatDuration(record.duration)}
                     </p>

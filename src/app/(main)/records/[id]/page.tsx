@@ -11,6 +11,7 @@ export default async function RecordPage({ params }: { params: Params }) {
 
   const record = await prisma.runningLog.findFirst({
     where: { id, userId: session?.user?.id },
+    include: { event: true },
   });
 
   if (!record) {

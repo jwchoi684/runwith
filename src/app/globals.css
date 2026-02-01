@@ -1,38 +1,44 @@
 @import "tailwindcss";
 
-/* Toss-style Design Tokens - Light Mode */
+/* Deel-style Design System - Clean & Minimal */
 :root {
   /* Backgrounds */
-  --background: #F2F4F6;
+  --background: #FAFBFC;
   --surface: #FFFFFF;
-  --surface-elevated: #F7F8FA;
-  --surface-hover: #F0F1F3;
+  --surface-secondary: #F7F8FA;
+  --surface-hover: #F3F4F6;
+  --surface-active: #EBEDF0;
 
   /* Primary - Keep existing blue */
   --primary: #3182F6;
   --primary-dark: #1B64DA;
-  --primary-light: #E8F3FF;
+  --primary-light: #EBF4FF;
+
+  /* Accent - Purple for highlights */
+  --accent: #7C5CFC;
+  --accent-light: #F0EBFF;
 
   /* Semantic */
-  --success: #00C853;
-  --success-light: #E8FAF0;
-  --warning: #FF9100;
-  --warning-light: #FFF4E5;
-  --error: #F04452;
-  --error-light: #FFEBEE;
+  --success: #22C55E;
+  --success-light: #DCFCE7;
+  --warning: #F59E0B;
+  --warning-light: #FEF3C7;
+  --error: #EF4444;
+  --error-light: #FEE2E2;
 
   /* Text */
-  --text-primary: #191F28;
-  --text-secondary: #4E5968;
-  --text-tertiary: #8B95A1;
-  --text-disabled: #B0B8C1;
+  --text-primary: #111827;
+  --text-secondary: #4B5563;
+  --text-tertiary: #9CA3AF;
+  --text-disabled: #D1D5DB;
 
   /* Borders */
-  --border: #E5E8EB;
-  --border-light: #F2F4F6;
+  --border: #E5E7EB;
+  --border-light: #F3F4F6;
+  --border-dark: #D1D5DB;
 
   /* Overlays */
-  --overlay: rgba(0, 0, 0, 0.4);
+  --overlay: rgba(0, 0, 0, 0.5);
 
   /* Foreground for Tailwind */
   --foreground: var(--text-primary);
@@ -43,12 +49,17 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
-  --color-surface-elevated: var(--surface-elevated);
+  --color-surface-secondary: var(--surface-secondary);
   --color-surface-hover: var(--surface-hover);
+  --color-surface-active: var(--surface-active);
+  --color-surface-elevated: var(--surface-secondary);
 
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
   --color-primary-light: var(--primary-light);
+
+  --color-accent: var(--accent);
+  --color-accent-light: var(--accent-light);
 
   --color-success: var(--success);
   --color-success-light: var(--success-light);
@@ -64,23 +75,25 @@
 
   --color-border: var(--border);
   --color-border-light: var(--border-light);
+  --color-border-dark: var(--border-dark);
 
   /* Fonts */
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
   --font-mono: var(--font-geist-mono);
 
-  /* Border Radius - Toss uses rounder corners */
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 20px;
-  --radius-2xl: 24px;
+  /* Border Radius - Deel uses smaller, cleaner radius */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
   --radius-full: 9999px;
 
-  /* Shadows - Toss uses very subtle shadows */
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.06);
-  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
+  /* Shadows - Very subtle */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.04), 0 2px 4px rgba(0, 0, 0, 0.02);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.04), 0 4px 6px rgba(0, 0, 0, 0.02);
 }
 
 /* Base Styles */
@@ -98,10 +111,10 @@ body {
   min-height: 100dvh;
 }
 
-/* Custom Scrollbar - Toss Style */
+/* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -138,142 +151,137 @@ body {
   padding-top: env(safe-area-inset-top, 0);
 }
 
-/* Toss-style shadows */
-.shadow-toss {
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+/* Deel-style shadows */
+.shadow-card {
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
-.shadow-toss-lg {
+.shadow-card-hover {
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-/* Toss-style divider */
-.divider {
-  height: 1px;
-  background: var(--border-light);
-}
-
-/* Toss-style list item */
-.list-item {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-  background: var(--surface);
-  transition: background-color 0.15s ease;
-}
-
-.list-item:hover {
-  background: var(--surface-elevated);
-}
-
-.list-item:active {
-  background: var(--surface-hover);
-}
-
-/* Toss-style badge */
-.badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
-  border-radius: var(--radius-full);
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.badge-primary {
-  background: var(--primary-light);
-  color: var(--primary);
-}
-
-.badge-success {
-  background: var(--success-light);
-  color: var(--success);
-}
-
-.badge-warning {
-  background: var(--warning-light);
-  color: var(--warning);
-}
-
-.badge-error {
-  background: var(--error-light);
-  color: var(--error);
-}
-
-.badge-gray {
-  background: var(--surface-elevated);
-  color: var(--text-secondary);
-}
-
-/* Toss-style pill button */
-.pill-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  font-size: 14px;
-  font-weight: 500;
-  background: var(--surface-elevated);
-  color: var(--text-primary);
-  transition: all 0.15s ease;
-}
-
-.pill-button:hover {
-  background: var(--border);
-}
-
-.pill-button:active {
-  transform: scale(0.97);
-}
-
-.pill-button-primary {
-  background: var(--primary);
-  color: white;
-}
-
-.pill-button-primary:hover {
-  background: var(--primary-dark);
-}
-
-/* Toss-style table */
-.toss-table {
+/* Deel-style Table */
+.deel-table {
   width: 100%;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
 }
 
-.toss-table thead {
-  background: var(--surface-elevated);
+.deel-table thead {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
 }
 
-.toss-table th {
+.deel-table th {
   padding: 12px 16px;
   font-size: 13px;
   font-weight: 500;
   color: var(--text-tertiary);
   text-align: left;
-  border-bottom: 1px solid var(--border-light);
 }
 
-.toss-table td {
+.deel-table td {
   padding: 16px;
   font-size: 14px;
   color: var(--text-primary);
   border-bottom: 1px solid var(--border-light);
 }
 
-.toss-table tbody tr {
+.deel-table tbody tr {
   transition: background-color 0.15s ease;
 }
 
-.toss-table tbody tr:hover {
-  background: var(--surface-elevated);
+.deel-table tbody tr:hover {
+  background: var(--surface-hover);
 }
 
-.toss-table tbody tr:last-child td {
-  border-bottom: none;
+/* Deel-style Status Badge */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+  background: var(--surface-secondary);
+  color: var(--text-secondary);
+}
+
+.status-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.status-badge-active {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.status-badge-pending {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.status-badge-inactive {
+  background: var(--surface-secondary);
+  color: var(--text-tertiary);
+}
+
+/* Deel-style Filter Pills */
+.filter-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.filter-pill:hover {
+  border-color: var(--border-dark);
+  background: var(--surface-hover);
+}
+
+.filter-pill-active {
+  background: var(--primary-light);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Deel-style Tabs */
+.deel-tabs {
+  display: flex;
+  gap: 24px;
+  border-bottom: 1px solid var(--border);
+}
+
+.deel-tab {
+  padding: 12px 0;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.deel-tab:hover {
+  color: var(--text-primary);
+}
+
+.deel-tab-active {
+  color: var(--text-primary);
+  border-bottom-color: var(--primary);
 }
 
 /* Number formatting */
@@ -281,24 +289,90 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Amount styles */
-.amount-positive {
-  color: var(--primary);
+/* Deel-style List Item */
+.list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border-light);
+  transition: background-color 0.15s ease;
 }
 
-.amount-negative {
-  color: var(--error);
+.list-item:hover {
+  background: var(--surface-hover);
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+/* Avatar */
+.avatar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-full);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.avatar-sm {
+  width: 32px;
+  height: 32px;
+  font-size: 12px;
+}
+
+.avatar-md {
+  width: 40px;
+  height: 40px;
+  font-size: 14px;
+}
+
+.avatar-lg {
+  width: 48px;
+  height: 48px;
+  font-size: 16px;
+}
+
+/* Deel-style Action Button */
+.action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+  font-size: 13px;
+  font-weight: 500;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.action-btn:hover {
+  background: var(--surface-hover);
+  border-color: var(--border-dark);
+}
+
+.action-btn-primary {
+  background: var(--text-primary);
+  border-color: var(--text-primary);
+  color: white;
+}
+
+.action-btn-primary:hover {
+  background: #1F2937;
 }
 
 /* Animations */
 @keyframes fadeIn {
   from {
     opacity: 0;
-    transform: translateY(4px);
   }
   to {
     opacity: 1;
-    transform: translateY(0);
   }
 }
 
@@ -309,7 +383,7 @@ body {
 @keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(8px);
   }
   to {
     opacity: 1;
@@ -318,5 +392,5 @@ body {
 }
 
 .animate-slide-up {
-  animation: slideUp 0.3s ease-out;
+  animation: slideUp 0.2s ease-out;
 }

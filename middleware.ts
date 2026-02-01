@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import type { NextRequest, NextFetchEvent } from "next/server";
-import { auth } from "@/lib/auth";
 
 // Routes that require authentication
 const protectedRoutes = [
@@ -10,17 +9,15 @@ const protectedRoutes = [
   "/admin",
 ];
 
-// Routes that are public (don't need authentication)
-const publicRoutes = [
-  "/login",
-  "/onboarding",
-  "/events",
-  "/leaderboard",
-  "/pace-chart",
-  "/crews",
+// Session cookie names for next-auth
+const SESSION_COOKIE_NAMES = [
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
 ];
 
-export async function middleware(request: NextRequest, event: NextFetchEvent) {
+export function middleware(request: NextRequest, event: NextFetchEvent) {
   const path = request.nextUrl.pathname;
 
   // ===== API Logging (for non-auth API routes) =====
@@ -74,7 +71,7 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
   }
 
   // ===== Route Protection =====
-  // Skip for API routes, static files, and public routes
+  // Skip for API routes, static files
   if (
     path.startsWith("/api") ||
     path.startsWith("/_next") ||
@@ -88,26 +85,21 @@ export async function middleware(request: NextRequest, event: NextFetchEvent) {
     (route) => path === route || path.startsWith(`${route}/`)
   );
 
-  // Check if route is explicitly public
-  const isPublicRoute = publicRoutes.some(
-    (route) => path === route || path.startsWith(`${route}/`)
-  ) || path === "/";
-
   if (isProtectedRoute) {
-    // Get session for protected routes
-    const session = await auth();
+    // Check for session cookie (Edge-compatible check)
+    const hasSessionCookie = SESSION_COOKIE_NAMES.some(
+      (name) => request.cookies.has(name)
+    );
 
-    // If no session or invalid session, redirect to login
-    if (!session?.user?.id) {
+    // If no session cookie, redirect to login
+    if (!hasSessionCookie) {
       const loginUrl = new URL("/login", request.url);
       loginUrl.searchParams.set("callbackUrl", path);
       return NextResponse.redirect(loginUrl);
     }
 
-    // Additional check for admin routes
-    if (path.startsWith("/admin") && session.user.role !== "admin") {
-      return NextResponse.redirect(new URL("/", request.url));
-    }
+    // Note: Full session validation (including user existence check and admin role check)
+    // is done in the page/API route itself, not in middleware
   }
 
   return NextResponse.next();
@@ -122,7 +114,5 @@ export const config = {
     "/records/new",
     "/crews/new",
     "/admin/:path*",
-    // Home page (for session check)
-    "/",
   ],
 };

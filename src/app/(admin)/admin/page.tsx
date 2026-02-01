@@ -13,6 +13,11 @@ export default async function AdminPage() {
     redirect("/login");
   }
 
+  // Check admin role
+  if (session.user.role !== "admin") {
+    redirect("/");
+  }
+
   // Fetch all users with their accounts (for login provider)
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },

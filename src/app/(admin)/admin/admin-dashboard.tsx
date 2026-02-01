@@ -1577,64 +1577,6 @@ export function AdminDashboard({
                 </Card>
               </div>
 
-              <section>
-                <h2 className="text-lg font-semibold text-text-primary mb-3">최근 기록</h2>
-                <Card className="divide-y divide-border">
-                  {recentRecords.slice(0, 5).map((record) => (
-                    <div
-                      key={record.id}
-                      className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
-                      onClick={() => openUserDetail(record.user.id)}
-                    >
-                      {record.user.image ? (
-                        <Image src={record.user.image} alt="" width={40} height={40} className="rounded-full" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
-                          {record.user.name?.[0]?.toUpperCase() || "U"}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-text-primary truncate">{record.user.name || record.user.email}</p>
-                        <p className="text-sm text-text-tertiary">{record.event?.name || "개인 기록"} · {record.distance.toFixed(2)}km</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-text-primary">{formatDuration(record.duration)}</p>
-                        <p className="text-xs text-text-tertiary">{formatDate(record.date)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </Card>
-              </section>
-
-              <section>
-                <h2 className="text-lg font-semibold text-text-primary mb-3">최근 가입 사용자</h2>
-                <Card className="divide-y divide-border">
-                  {users.slice(0, 5).map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
-                      onClick={() => openUserDetail(user.id)}
-                    >
-                      {user.image ? (
-                        <Image src={user.image} alt="" width={40} height={40} className="rounded-full" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
-                          {user.name?.[0]?.toUpperCase() || "U"}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-text-primary truncate">{user.name || "Unknown"}</p>
-                          {getProviderBadge(user.accounts)}
-                        </div>
-                        <p className="text-sm text-text-tertiary truncate">{user.email}</p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-text-tertiary" />
-                    </div>
-                  ))}
-                </Card>
-              </section>
-
               {/* DAU/MAU Trend Charts */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* DAU Trend (Last 30 Days) */}
@@ -1704,70 +1646,37 @@ export function AdminDashboard({
               </div>
 
               {/* Statistics Section */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Most Viewed Pages */}
-                <section>
-                  <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-primary" />
-                    인기 페이지 (조회수)
-                  </h2>
-                  <Card className="divide-y divide-border">
-                    {pageStats.length === 0 ? (
-                      <div className="p-4 text-center text-text-tertiary">데이터가 없습니다</div>
-                    ) : (
-                      pageStats.slice(0, 5).map((stat, index) => (
-                        <div key={stat.path} className="flex items-center gap-3 p-4">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                            index === 0 ? "bg-yellow-500/20 text-yellow-500" :
-                            index === 1 ? "bg-gray-300/20 text-gray-400" :
-                            index === 2 ? "bg-orange-500/20 text-orange-500" :
-                            "bg-surface-elevated text-text-tertiary"
-                          }`}>
-                            {index + 1}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-text-primary truncate">{stat.path}</p>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-primary">{stat.count.toLocaleString()}</p>
-                            <p className="text-xs text-text-tertiary">조회</p>
-                          </div>
+              <section>
+                <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
+                  <Globe className="w-5 h-5 text-primary" />
+                  인기 페이지 (조회수)
+                </h2>
+                <Card className="divide-y divide-border">
+                  {pageStats.length === 0 ? (
+                    <div className="p-4 text-center text-text-tertiary">데이터가 없습니다</div>
+                  ) : (
+                    pageStats.slice(0, 10).map((stat, index) => (
+                      <div key={stat.path} className="flex items-center gap-3 p-4">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                          index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                          index === 1 ? "bg-gray-300/20 text-gray-400" :
+                          index === 2 ? "bg-orange-500/20 text-orange-500" :
+                          "bg-surface-elevated text-text-tertiary"
+                        }`}>
+                          {index + 1}
                         </div>
-                      ))
-                    )}
-                  </Card>
-                </section>
-
-                {/* Recent Users */}
-                <section>
-                  <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
-                    <Users className="w-5 h-5 text-warning" />
-                    최근 가입 사용자
-                  </h2>
-                  <Card className="divide-y divide-border">
-                    {users.slice(0, 5).map((user) => (
-                      <div
-                        key={user.id}
-                        className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
-                        onClick={() => openUserDetail(user.id)}
-                      >
-                        {user.image ? (
-                          <Image src={user.image} alt="" width={36} height={36} className="rounded-full" />
-                        ) : (
-                          <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
-                            {user.name?.[0]?.toUpperCase() || "U"}
-                          </div>
-                        )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-text-primary truncate">{user.name || "Unknown"}</p>
-                          <p className="text-xs text-text-tertiary">{formatRelativeTime(new Date(user.createdAt))}</p>
+                          <p className="font-medium text-text-primary truncate">{stat.path}</p>
                         </div>
-                        <ChevronRight className="w-4 h-4 text-text-tertiary" />
+                        <div className="text-right">
+                          <p className="font-bold text-primary">{stat.count.toLocaleString()}</p>
+                          <p className="text-xs text-text-tertiary">조회</p>
+                        </div>
                       </div>
-                    ))}
-                  </Card>
-                </section>
-              </div>
+                    ))
+                  )}
+                </Card>
+              </section>
             </div>
           )}
 

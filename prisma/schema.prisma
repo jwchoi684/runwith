@@ -45,6 +45,7 @@ model User {
   pbFull        Int?      // 풀마라톤 개인 최고 기록
   pbHalf        Int?      // 하프마라톤 개인 최고 기록
   pb10k         Int?      // 10K 개인 최고 기록
+  lastAccessedAt DateTime? // 마지막 접속 시간
   accounts      Account[]
   sessions      Session[]
   runningLogs   RunningLog[]
@@ -85,8 +86,10 @@ model MarathonEvent {
   name        String
   location    String?
   distance    Float        // in kilometers (42.195, 21.0975, 10, 5)
+  courses     String?      // comma-separated course types (e.g., "Full,Half,10km,5km")
   date        DateTime?    // event date (optional, for annual events)
   isOfficial  Boolean      @default(true)
+  externalId  String?      // external source ID (for deduplication)
   runningLogs RunningLog[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt

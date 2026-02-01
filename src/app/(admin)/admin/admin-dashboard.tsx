@@ -34,6 +34,8 @@ import {
   TrendingUp,
   Activity,
   Medal,
+  Download,
+  Check,
 } from "lucide-react";
 
 interface User {
@@ -43,6 +45,7 @@ interface User {
   image: string | null;
   role: string;
   createdAt: Date;
+  lastAccessedAt: Date | null;
   accounts: { provider: string }[];
   _count: {
     runningLogs: number;
@@ -105,12 +108,22 @@ interface MarathonEvent {
   name: string;
   location: string | null;
   distance: number;
+  courses: string | null;
   date: Date | null;
   isOfficial: boolean;
   createdAt: Date;
   _count: {
     runningLogs: number;
   };
+}
+
+interface ScrapedEvent {
+  name: string;
+  date: string;
+  location: string;
+  courses: string[];
+  externalId: string;
+  alreadyExists?: boolean;
 }
 
 interface Ranking {
@@ -176,6 +189,7 @@ export function AdminDashboard({
   const [activeView, setActiveView] = useState<View>("dashboard");
   const [searchQuery, setSearchQuery] = useState("");
   const [promotingUserId, setPromotingUserId] = useState<string | null>(null);
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
   const [selectedCrewId, setSelectedCrewId] = useState<string | null>(null);
@@ -188,6 +202,7 @@ export function AdminDashboard({
     name: "",
     location: "",
     distance: "42.195",
+    courses: [] as string[],
     date: "",
     isOfficial: true,
   });
@@ -195,6 +210,14 @@ export function AdminDashboard({
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+
+  // Import events state
+  const [showImportModal, setShowImportModal] = useState(false);
+  const [importYear, setImportYear] = useState(new Date().getFullYear());
+  const [scrapedEvents, setScrapedEvents] = useState<ScrapedEvent[]>([]);
+  const [selectedImportIds, setSelectedImportIds] = useState<Set<string>>(new Set());
+  const [isLoadingImport, setIsLoadingImport] = useState(false);
+  const [isImporting, setIsImporting] = useState(false);
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
   const selectedCrew = crews.find((c) => c.id === selectedCrewId);
@@ -236,6 +259,39 @@ export function AdminDashboard({
     }
   };
 
+  const handleDeleteUser = async (userId: string, userName: string | null) => {
+    if (userId === currentUserId) {
+      alert("자신의 계정은 삭제할 수 없습니다.");
+      return;
+    }
+
+    const confirmMsg = `정말 "${userName || "Unknown"}" 사용자를 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없으며 다음 데이터가 삭제됩니다:\n- 모든 러닝 기록\n- 크루 멤버십\n- 로그인 정보\n\n소유한 크루는 다른 멤버에게 이전되거나 삭제됩니다.`;
+
+    if (!confirm(confirmMsg)) return;
+
+    setDeletingUserId(userId);
+    try {
+      const response = await fetch(`/api/admin/users/${userId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`사용자가 삭제되었습니다.\n- 삭제된 기록: ${data.deletedRecords}개\n- 탈퇴한 크루: ${data.deletedMemberships}개`);
+        navigateTo("users");
+        router.refresh();
+      } else {
+        const data = await response.json();
+        alert(data.error || "삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to delete user:", error);
+      alert("삭제에 실패했습니다.");
+    } finally {
+      setDeletingUserId(null);
+    }
+  };
+
   const openEventModal = (event?: MarathonEvent) => {
     if (event) {
       setEditingEvent(event);
@@ -243,6 +299,7 @@ export function AdminDashboard({
         name: event.name,
         location: event.location || "",
         distance: event.distance.toString(),
+        courses: event.courses ? event.courses.split(",") : [],
         date: event.date ? new Date(event.date).toISOString().split("T")[0] : "",
         isOfficial: event.isOfficial,
       });
@@ -252,6 +309,7 @@ export function AdminDashboard({
         name: "",
         location: "",
         distance: "42.195",
+        courses: [],
         date: "",
         isOfficial: true,
       });
@@ -276,6 +334,7 @@ export function AdminDashboard({
           name: eventForm.name.trim(),
           location: eventForm.location.trim() || null,
           distance: parseFloat(eventForm.distance),
+          courses: eventForm.courses.length > 0 ? eventForm.courses.join(",") : null,
           date: eventForm.date || null,
           isOfficial: eventForm.isOfficial,
         }),
@@ -367,6 +426,68 @@ export function AdminDashboard({
     }
   };
 
+  const handleFetchImportEvents = async () => {
+    setIsLoadingImport(true);
+    try {
+      const response = await fetch(`/api/admin/events/import?year=${importYear}`);
+      if (response.ok) {
+        const data = await response.json();
+        setScrapedEvents(data.events);
+        // Pre-select new events
+        const newIds = data.events
+          .filter((e: ScrapedEvent) => !e.alreadyExists)
+          .map((e: ScrapedEvent) => e.externalId);
+        setSelectedImportIds(new Set(newIds));
+      } else {
+        alert("대회 목록을 불러오는데 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to fetch import events:", error);
+      alert("대회 목록을 불러오는데 실패했습니다.");
+    } finally {
+      setIsLoadingImport(false);
+    }
+  };
+
+  const handleImportEvents = async () => {
+    if (selectedImportIds.size === 0) return;
+
+    setIsImporting(true);
+    try {
+      const eventsToImport = scrapedEvents.filter((e) => selectedImportIds.has(e.externalId));
+      const response = await fetch("/api/admin/events/import", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ events: eventsToImport }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setShowImportModal(false);
+        setScrapedEvents([]);
+        setSelectedImportIds(new Set());
+        router.refresh();
+        alert(`${data.importedCount}개의 대회를 가져왔습니다.`);
+      } else {
+        alert("대회 가져오기에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to import events:", error);
+      alert("대회 가져오기에 실패했습니다.");
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const toggleCourse = (course: string) => {
+    setEventForm((prev) => ({
+      ...prev,
+      courses: prev.courses.includes(course)
+        ? prev.courses.filter((c) => c !== course)
+        : [...prev.courses, course],
+    }));
+  };
+
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -381,6 +502,20 @@ export function AdminDashboard({
       month: "short",
       day: "numeric",
     });
+  };
+
+  const formatRelativeTime = (date: Date) => {
+    const now = new Date();
+    const diff = now.getTime() - date.getTime();
+    const minutes = Math.floor(diff / (1000 * 60));
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+
+    if (minutes < 1) return "방금 전";
+    if (minutes < 60) return `${minutes}분 전`;
+    if (hours < 24) return `${hours}시간 전`;
+    if (days < 7) return `${days}일 전`;
+    return formatDate(date);
   };
 
   const formatPace = (pace: number | null) => {
@@ -592,7 +727,28 @@ export function AdminDashboard({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-text-secondary">거리</label>
+                <label className="text-sm font-medium text-text-secondary">코스 선택</label>
+                <div className="flex gap-2 mt-1">
+                  {(["Full", "Half", "10km", "5km"] as const).map((course) => (
+                    <button
+                      key={course}
+                      type="button"
+                      onClick={() => toggleCourse(course)}
+                      className={`flex-1 py-2 px-2 rounded-lg border text-xs font-medium transition-all ${
+                        eventForm.courses.includes(course)
+                          ? "bg-primary/10 border-primary text-primary"
+                          : "bg-surface-elevated border-border text-text-secondary hover:border-text-secondary"
+                      }`}
+                    >
+                      {course}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs text-text-tertiary mt-1">복수 선택 가능</p>
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-text-secondary">대표 거리</label>
                 <div className="flex gap-2 mt-1">
                   {distancePresets.map((preset) => (
                     <button
@@ -655,6 +811,139 @@ export function AdminDashboard({
         </div>
       )}
 
+      {/* Import Modal */}
+      {showImportModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowImportModal(false)} />
+          <div className="relative bg-surface rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <h2 className="text-lg font-bold text-text-primary">마라톤 일정 가져오기</h2>
+              <button
+                onClick={() => setShowImportModal(false)}
+                className="p-2 text-text-tertiary hover:text-text-primary rounded-lg hover:bg-surface-elevated"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 border-b border-border">
+              <div className="flex gap-3 items-end">
+                <div className="flex-1">
+                  <label className="text-sm font-medium text-text-secondary">연도 선택</label>
+                  <select
+                    value={importYear}
+                    onChange={(e) => setImportYear(parseInt(e.target.value))}
+                    className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  >
+                    {[2024, 2025, 2026, 2027].map((year) => (
+                      <option key={year} value={year}>{year}년</option>
+                    ))}
+                  </select>
+                </div>
+                <Button
+                  onClick={handleFetchImportEvents}
+                  disabled={isLoadingImport}
+                >
+                  {isLoadingImport ? "불러오는 중..." : "일정 조회"}
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {scrapedEvents.length === 0 ? (
+                <p className="text-center text-text-tertiary py-8">
+                  연도를 선택하고 &quot;일정 조회&quot; 버튼을 눌러주세요
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="text-sm text-text-secondary">
+                      총 {scrapedEvents.length}개 대회 (새로운 대회: {scrapedEvents.filter(e => !e.alreadyExists).length}개)
+                    </span>
+                    <button
+                      onClick={() => {
+                        const newIds = scrapedEvents
+                          .filter(e => !e.alreadyExists)
+                          .map(e => e.externalId);
+                        setSelectedImportIds(new Set(newIds));
+                      }}
+                      className="text-sm text-primary hover:underline"
+                    >
+                      새 대회만 선택
+                    </button>
+                  </div>
+                  {scrapedEvents.map((event) => (
+                    <div
+                      key={event.externalId}
+                      className={`flex items-center gap-3 p-3 rounded-lg border ${
+                        event.alreadyExists ? "border-border bg-surface-elevated opacity-50" : "border-border"
+                      }`}
+                    >
+                      <button
+                        onClick={() => {
+                          if (event.alreadyExists) return;
+                          setSelectedImportIds(prev => {
+                            const newSet = new Set(prev);
+                            if (newSet.has(event.externalId)) {
+                              newSet.delete(event.externalId);
+                            } else {
+                              newSet.add(event.externalId);
+                            }
+                            return newSet;
+                          });
+                        }}
+                        disabled={event.alreadyExists}
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
+                          selectedImportIds.has(event.externalId)
+                            ? "bg-primary border-primary text-white"
+                            : event.alreadyExists
+                            ? "border-border bg-surface-elevated"
+                            : "border-border hover:border-text-secondary"
+                        }`}
+                      >
+                        {selectedImportIds.has(event.externalId) && (
+                          <Check className="w-3 h-3" />
+                        )}
+                      </button>
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-text-primary truncate">
+                          {event.name}
+                          {event.alreadyExists && (
+                            <span className="ml-2 text-xs text-text-tertiary">(이미 등록됨)</span>
+                          )}
+                        </p>
+                        <div className="flex items-center gap-3 text-sm text-text-tertiary">
+                          <span>{event.date}</span>
+                          {event.location && <span>{event.location}</span>}
+                          <span>{event.courses.join(", ")}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex gap-3 p-6 border-t border-border">
+              <Button
+                variant="secondary"
+                onClick={() => setShowImportModal(false)}
+                className="flex-1"
+              >
+                취소
+              </Button>
+              <Button
+                onClick={handleImportEvents}
+                disabled={selectedImportIds.size === 0 || isImporting}
+                className="flex-1"
+              >
+                {isImporting ? "가져오는 중..." : `${selectedImportIds.size}개 대회 가져오기`}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Main Content */}
       <main className="flex-1 lg:pl-64">
         {/* Mobile Header */}
@@ -673,7 +962,7 @@ export function AdminDashboard({
           </div>
         </header>
 
-        <div className="p-4 lg:p-8 max-w-5xl">
+        <div className="p-4 lg:p-8">
           {/* Desktop Header */}
           <div className="hidden lg:block mb-8">
             <h1 className="text-2xl font-bold text-text-primary">
@@ -685,7 +974,7 @@ export function AdminDashboard({
           {activeView === "dashboard" && (
             <div className="space-y-6">
               {/* DAU/MAU Stats */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
                 <Card className="p-5">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
@@ -710,7 +999,7 @@ export function AdminDashboard({
                 </Card>
               </div>
 
-              <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-4">
                 <Card className="text-center py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("users")}>
                   <Users className="w-8 h-8 text-primary mx-auto mb-2" />
                   <p className="text-2xl font-bold text-text-primary">{stats.totalUsers}</p>
@@ -796,7 +1085,7 @@ export function AdminDashboard({
           {/* Users View */}
           {activeView === "users" && (
             <div className="space-y-4">
-              <div className="relative">
+              <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="text"
@@ -807,55 +1096,88 @@ export function AdminDashboard({
                 />
               </div>
 
-              <Card className="divide-y divide-border">
-                {filteredUsers.length === 0 ? (
+              {filteredUsers.length === 0 ? (
+                <Card>
                   <p className="text-center text-text-tertiary py-8">사용자가 없습니다</p>
-                ) : (
-                  filteredUsers.map((user) => (
-                    <div
-                      key={user.id}
-                      className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
-                      onClick={() => openUserDetail(user.id)}
-                    >
-                      {user.image ? (
-                        <Image src={user.image} alt="" width={48} height={48} className="rounded-full" />
-                      ) : (
-                        <div className="w-12 h-12 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium text-lg">
-                          {user.name?.[0]?.toUpperCase() || "U"}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="font-medium text-text-primary truncate">{user.name || "Unknown"}</p>
-                          {user.role === "admin" && (
-                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">Admin</span>
-                          )}
-                          {getProviderBadge(user.accounts)}
-                        </div>
-                        <p className="text-sm text-text-tertiary truncate">{user.email}</p>
-                        <p className="text-xs text-text-tertiary mt-1">
-                          기록 {user._count.runningLogs}개 · 크루 {user._count.crews}개
-                        </p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-text-tertiary" />
-                    </div>
-                  ))
-                )}
-              </Card>
+                </Card>
+              ) : (
+                <Card className="overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[800px]">
+                      <thead>
+                        <tr className="bg-surface-elevated border-b border-border">
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">이메일</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">역할</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">기록</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">크루</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">가입일</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">마지막 접속</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredUsers.map((user) => (
+                          <tr
+                            key={user.id}
+                            onClick={() => openUserDetail(user.id)}
+                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                {user.image ? (
+                                  <Image src={user.image} alt="" width={36} height={36} className="rounded-full" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                                    {user.name?.[0]?.toUpperCase() || "U"}
+                                  </div>
+                                )}
+                                <div className="flex items-center gap-2">
+                                  <span className="font-medium text-text-primary">{user.name || "Unknown"}</span>
+                                  {getProviderBadge(user.accounts)}
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-text-secondary">{user.email}</td>
+                            <td className="px-4 py-3 text-center">
+                              {user.role === "admin" ? (
+                                <span className="px-2 py-1 bg-primary/10 text-primary text-xs font-medium rounded-full">Admin</span>
+                              ) : (
+                                <span className="text-xs text-text-tertiary">User</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm text-text-secondary">{user._count.runningLogs}</td>
+                            <td className="px-4 py-3 text-center text-sm text-text-secondary">{user._count.crews}</td>
+                            <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(user.createdAt)}</td>
+                            <td className="px-4 py-3 text-sm text-text-tertiary">
+                              {user.lastAccessedAt ? formatRelativeTime(new Date(user.lastAccessedAt)) : "-"}
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
             </div>
           )}
 
           {/* Records View */}
           {activeView === "records" && (
             <div className="space-y-4">
-              <Card className="divide-y divide-border">
-                {recentRecords.length === 0 ? (
+              {recentRecords.length === 0 ? (
+                <Card>
                   <p className="text-center text-text-tertiary py-8">기록이 없습니다</p>
-                ) : (
-                  recentRecords.map((record) => (
-                    <div
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
+                  {recentRecords.map((record) => (
+                    <Card
                       key={record.id}
-                      className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
+                      className="flex items-center gap-3 cursor-pointer hover:shadow-toss-lg transition-all"
                       onClick={() => openUserDetail(record.user.id)}
                     >
                       {record.user.image ? (
@@ -873,17 +1195,17 @@ export function AdminDashboard({
                         <p className="font-medium text-text-primary">{formatDuration(record.duration)}</p>
                         <p className="text-xs text-text-tertiary">{formatDate(record.date)}</p>
                       </div>
-                    </div>
-                  ))
-                )}
-              </Card>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
           {/* Crews View */}
           {activeView === "crews" && (
             <div className="space-y-4">
-              <div className="relative">
+              <div className="relative max-w-md">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                 <input
                   type="text"
@@ -894,14 +1216,16 @@ export function AdminDashboard({
                 />
               </div>
 
-              <Card className="divide-y divide-border">
-                {filteredCrews.length === 0 ? (
+              {filteredCrews.length === 0 ? (
+                <Card>
                   <p className="text-center text-text-tertiary py-8">크루가 없습니다</p>
-                ) : (
-                  filteredCrews.map((crew) => (
-                    <div
+                </Card>
+              ) : (
+                <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
+                  {filteredCrews.map((crew) => (
+                    <Card
                       key={crew.id}
-                      className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
+                      className="flex items-center gap-3 cursor-pointer hover:shadow-toss-lg transition-all"
                       onClick={() => openCrewDetail(crew.id)}
                     >
                       <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-lg">
@@ -922,10 +1246,10 @@ export function AdminDashboard({
                         </p>
                       </div>
                       <ChevronRight className="w-5 h-5 text-text-tertiary" />
-                    </div>
-                  ))
-                )}
-              </Card>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
@@ -943,6 +1267,10 @@ export function AdminDashboard({
                     className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
+                <Button variant="secondary" onClick={() => setShowImportModal(true)}>
+                  <Download className="w-4 h-4 mr-1" />
+                  가져오기
+                </Button>
                 <Button onClick={() => openEventModal()}>
                   <Plus className="w-4 h-4 mr-1" />
                   추가
@@ -1148,7 +1476,7 @@ export function AdminDashboard({
                         </p>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-primary">{rank.totalDistance.toFixed(1)} km</p>
+                        <p className="font-bold text-primary">{rank.totalDistance.toFixed(3)} km</p>
                         <p className="text-xs text-text-tertiary">{formatDuration(rank.totalDuration)}</p>
                       </div>
                     </div>
@@ -1194,10 +1522,14 @@ export function AdminDashboard({
                       <Calendar className="w-4 h-4" />
                       가입일: {formatDate(selectedUser.createdAt)}
                     </p>
+                    <p className="text-sm text-text-tertiary mt-1 flex items-center gap-1">
+                      <Clock className="w-4 h-4" />
+                      마지막 접속: {selectedUser.lastAccessedAt ? formatRelativeTime(new Date(selectedUser.lastAccessedAt)) : "정보 없음"}
+                    </p>
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-6">
+                <div className="flex gap-2 mt-6 flex-wrap">
                   {selectedUser.role === "admin" ? (
                     <Button
                       variant="secondary"
@@ -1217,10 +1549,21 @@ export function AdminDashboard({
                       {promotingUserId === selectedUser.id ? "처리 중..." : "관리자로 승격"}
                     </Button>
                   )}
+                  {selectedUser.id !== currentUserId && (
+                    <Button
+                      variant="secondary"
+                      onClick={() => handleDeleteUser(selectedUser.id, selectedUser.name)}
+                      disabled={deletingUserId === selectedUser.id}
+                      className="text-error border-error/20 hover:bg-error/10"
+                    >
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      {deletingUserId === selectedUser.id ? "삭제 중..." : "계정 삭제"}
+                    </Button>
+                  )}
                 </div>
               </Card>
 
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
                 <Card className="text-center py-4">
                   <p className="text-2xl font-bold text-text-primary">{selectedUser._count.runningLogs}</p>
                   <p className="text-sm text-text-tertiary">러닝 기록</p>
@@ -1313,7 +1656,7 @@ export function AdminDashboard({
                 </div>
               </Card>
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="text-center py-4">
                   <p className="text-2xl font-bold text-text-primary">{selectedCrew._count.members}</p>
                   <p className="text-sm text-text-tertiary">멤버 수</p>

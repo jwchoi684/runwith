@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, location, distance, date, isOfficial } = body;
+  const { name, location, distance, courses, date, isOfficial } = body;
 
   if (!name || !distance) {
     return NextResponse.json(
@@ -38,6 +38,7 @@ export async function POST(request: NextRequest) {
       name,
       location: location || null,
       distance: parseFloat(distance),
+      courses: courses || null,
       date: date ? new Date(date) : null,
       isOfficial: isOfficial ?? true,
     },

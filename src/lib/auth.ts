@@ -94,6 +94,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // Mark user as needing onboarding by setting a flag
       // The user will be redirected to onboarding page
     },
+    async signIn({ user }) {
+      // Update last accessed time on sign in
+      if (user.id) {
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { lastAccessedAt: new Date() },
+        });
+      }
+    },
   },
 });
 

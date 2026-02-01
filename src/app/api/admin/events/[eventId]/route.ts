@@ -35,7 +35,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
   }
 
   const body = await request.json();
-  const { name, location, distance, date, isOfficial } = body;
+  const { name, location, distance, courses, date, isOfficial } = body;
 
   const updatedEvent = await prisma.marathonEvent.update({
     where: { id: eventId },
@@ -43,6 +43,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       name: name ?? event.name,
       location: location !== undefined ? location : event.location,
       distance: distance !== undefined ? parseFloat(distance) : event.distance,
+      courses: courses !== undefined ? courses : event.courses,
       date: date !== undefined ? (date ? new Date(date) : null) : event.date,
       isOfficial: isOfficial !== undefined ? isOfficial : event.isOfficial,
     },

@@ -13,7 +13,14 @@ export default async function AdminPage() {
   // Fetch all users with their accounts (for login provider)
   const users = await prisma.user.findMany({
     orderBy: { createdAt: "desc" },
-    include: {
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      image: true,
+      role: true,
+      createdAt: true,
+      lastAccessedAt: true,
       accounts: {
         select: { provider: true },
       },

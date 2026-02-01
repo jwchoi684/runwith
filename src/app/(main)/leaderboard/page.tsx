@@ -84,7 +84,7 @@ export default function LeaderboardPage() {
   };
 
   const formatDistance = (km: number) => {
-    return km >= 1000 ? `${(km / 1000).toFixed(1)}K` : km.toFixed(1);
+    return km >= 1000 ? `${(km / 1000).toFixed(1)}K` : km.toFixed(3);
   };
 
   const formatPace = (pace: number | null) => {
@@ -279,7 +279,7 @@ function PodiumItem({ entry, rank }: { entry: LeaderboardEntry; rank: number }) 
         {entry.userName || "Unknown"}
       </p>
       <p className={`text-xs ${rank === 1 ? "text-primary font-bold" : "text-text-tertiary"}`}>
-        {entry.totalDistance.toFixed(1)} km
+        {entry.totalDistance.toFixed(3)} km
       </p>
       <div className={`${size.bar} ${color} rounded-t-lg mt-2 flex items-center justify-center mx-auto`}>
         <span className={`${rank === 1 ? "text-3xl" : "text-2xl"} font-bold text-white`}>{rank}</span>

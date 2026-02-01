@@ -1,23 +1,8 @@
 "use client";
 
 import { signIn } from "next-auth/react";
-import { useState } from "react";
 
 export default function LoginPage() {
-  const [email, setEmail] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-
-  const handleDemoLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email) return;
-
-    setIsLoading(true);
-    await signIn("credentials", {
-      email,
-      callbackUrl: "/",
-    });
-  };
-
   const handleGoogleLogin = () => {
     signIn("google", { callbackUrl: "/" });
   };
@@ -84,70 +69,9 @@ export default function LoginPage() {
             Google로 계속하기
           </button>
 
-          {/* Divider */}
-          <div className="flex items-center gap-4 my-6">
-            <div className="flex-1 h-px bg-slate-600" />
-            <span className="text-slate-400 text-sm">또는</span>
-            <div className="flex-1 h-px bg-slate-600" />
-          </div>
-
-          {/* Demo Login */}
-          <form onSubmit={handleDemoLogin} className="space-y-4">
-            <div>
-              <label
-                htmlFor="email"
-                className="block text-sm font-medium text-slate-300 mb-2"
-              >
-                데모 계정으로 체험하기
-              </label>
-              <input
-                type="email"
-                id="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="이메일을 입력하세요"
-                className="w-full bg-slate-700/50 border border-slate-600 rounded-xl px-4 py-3 text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:border-transparent transition-all"
-              />
-            </div>
-            <button
-              type="submit"
-              disabled={!email || isLoading}
-              className="w-full bg-gradient-to-r from-orange-500 to-orange-600 hover:from-orange-600 hover:to-orange-700 disabled:from-slate-600 disabled:to-slate-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200 hover:shadow-lg hover:shadow-orange-500/30 disabled:cursor-not-allowed"
-            >
-              {isLoading ? (
-                <span className="flex items-center justify-center gap-2">
-                  <svg
-                    className="animate-spin w-5 h-5"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    />
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    />
-                  </svg>
-                  로그인 중...
-                </span>
-              ) : (
-                "데모 로그인"
-              )}
-            </button>
-          </form>
-
           {/* Footer */}
           <p className="text-center text-slate-400 text-sm mt-6">
-            데모 로그인은 테스트용입니다.
-            <br />
-            실제 사용시 Google 계정을 사용해주세요.
+            Google 계정으로 간편하게 시작하세요
           </p>
         </div>
       </div>

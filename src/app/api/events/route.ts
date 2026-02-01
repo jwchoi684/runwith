@@ -2,14 +2,8 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
 
-// GET /api/events - Get all marathon events
+// GET /api/events - Get all marathon events (public)
 export async function GET(request: NextRequest) {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
   const searchParams = request.nextUrl.searchParams;
   const distance = searchParams.get("distance");
 

@@ -1,11 +1,12 @@
 "use client";
 
-import { Home, Trophy, Calendar, Medal, User } from "lucide-react";
+import { Home, Trophy, Calendar, Medal, User, LogIn, Timer } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
 
-const navItems = [
+// Nav items for logged-in users
+const authNavItems = [
   { href: "/", icon: Home, label: "홈" },
   { href: "/records", icon: Trophy, label: "기록" },
   { href: "/events", icon: Calendar, label: "대회" },
@@ -13,13 +14,26 @@ const navItems = [
   { href: "/profile", icon: User, label: "프로필" },
 ];
 
-export function BottomNav() {
+// Nav items for non-logged-in users
+const publicNavItems = [
+  { href: "/events", icon: Calendar, label: "대회" },
+  { href: "/pace-chart", icon: Timer, label: "페이스" },
+  { href: "/login", icon: LogIn, label: "로그인" },
+];
+
+interface BottomNavProps {
+  isLoggedIn?: boolean;
+}
+
+export function BottomNav({ isLoggedIn = true }: BottomNavProps) {
   const pathname = usePathname();
+
+  const visibleItems = isLoggedIn ? authNavItems : publicNavItems;
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 bg-surface border-t border-border safe-area-bottom">
       <div className="flex items-center justify-around h-16 max-w-lg mx-auto">
-        {navItems.map((item) => {
+        {visibleItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href !== "/" && pathname.startsWith(item.href));

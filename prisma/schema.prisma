@@ -172,4 +172,23 @@ model AccessLog {
 
   @@index([userId])
   @@index([createdAt])
+  @@index([path])
+  @@index([action])
+}
+
+model ApiLog {
+  id           String   @id @default(cuid())
+  userId       String?
+  method       String   // GET, POST, PUT, DELETE
+  path         String   // API path
+  statusCode   Int?     // Response status code
+  duration     Int?     // Request duration in ms
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+
+  @@index([path])
+  @@index([method])
+  @@index([createdAt])
+  @@index([userId])
 }

@@ -4,8 +4,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { headers } from "next/headers";
 
 // Get client IP from various headers
-function getClientIP(request: NextRequest): string {
-  const headersList = headers();
+async function getClientIP(): Promise<string> {
+  const headersList = await headers();
 
   // Try various headers that might contain the real IP
   const forwardedFor = headersList.get("x-forwarded-for");
@@ -73,8 +73,8 @@ export async function POST(request: NextRequest) {
   const body = await request.json().catch(() => ({}));
   const { action = "page_view", path } = body;
 
-  const ipAddress = getClientIP(request);
-  const headersList = headers();
+  const ipAddress = await getClientIP();
+  const headersList = await headers();
   const userAgent = headersList.get("user-agent") || undefined;
 
   // Get geolocation

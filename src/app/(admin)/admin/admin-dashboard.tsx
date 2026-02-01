@@ -147,6 +147,9 @@ interface CrewMemberMapping {
   crewId: string;
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type JsonValue = any;
+
 interface AccessLog {
   id: string;
   userId: string;
@@ -154,7 +157,7 @@ interface AccessLog {
   ipAddress: string | null;
   userAgent: string | null;
   path: string | null;
-  metadata: { location?: string } | null;
+  metadata: JsonValue;
   createdAt: Date;
   user: {
     id: string;
@@ -162,6 +165,30 @@ interface AccessLog {
     email: string | null;
     image: string | null;
   };
+}
+
+interface ApiLog {
+  id: string;
+  userId: string | null;
+  method: string;
+  path: string;
+  statusCode: number | null;
+  duration: number | null;
+  ipAddress: string | null;
+  userAgent: string | null;
+  createdAt: Date;
+}
+
+interface PageStats {
+  path: string;
+  count: number;
+}
+
+interface ApiStats {
+  path: string;
+  method: string;
+  count: number;
+  avgDuration: number | null;
 }
 
 interface Stats {
@@ -199,10 +226,13 @@ interface AdminDashboardProps {
   crewMembers: CrewMemberMapping[];
   paceGroups: PaceGroup[];
   accessLogs: AccessLog[];
+  apiLogs: ApiLog[];
+  pageStats: PageStats[];
+  apiStats: ApiStats[];
   currentUserId: string;
 }
 
-type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "access-logs" | "user-detail" | "crew-detail";
+type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "access-logs" | "api-logs" | "user-detail" | "crew-detail";
 
 const coursePresets = ["Full", "Half", "10K", "5K"];
 
@@ -221,6 +251,9 @@ export function AdminDashboard({
   crewMembers,
   paceGroups,
   accessLogs,
+  apiLogs,
+  pageStats,
+  apiStats,
   currentUserId,
 }: AdminDashboardProps) {
   const router = useRouter();
@@ -875,6 +908,7 @@ export function AdminDashboard({
     { id: "pace-groups" as View, label: "페이스 차트", icon: Gauge },
     { id: "rankings" as View, label: "Ranking", icon: BarChart3 },
     { id: "access-logs" as View, label: "접속 로그", icon: History },
+    { id: "api-logs" as View, label: "API 로그", icon: Activity },
   ];
 
   return (
@@ -1605,6 +1639,89 @@ export function AdminDashboard({
                   ))}
                 </Card>
               </section>
+
+              {/* Statistics Section */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* Most Viewed Pages */}
+                <section>
+                  <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
+                    <Globe className="w-5 h-5 text-primary" />
+                    인기 페이지 (조회수)
+                  </h2>
+                  <Card className="divide-y divide-border">
+                    {pageStats.length === 0 ? (
+                      <div className="p-4 text-center text-text-tertiary">데이터가 없습니다</div>
+                    ) : (
+                      pageStats.slice(0, 5).map((stat, index) => (
+                        <div key={stat.path} className="flex items-center gap-3 p-4">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                            index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                            index === 1 ? "bg-gray-300/20 text-gray-400" :
+                            index === 2 ? "bg-orange-500/20 text-orange-500" :
+                            "bg-surface-elevated text-text-tertiary"
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-text-primary truncate">{stat.path}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-primary">{stat.count.toLocaleString()}</p>
+                            <p className="text-xs text-text-tertiary">조회</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </Card>
+                </section>
+
+                {/* Most Called APIs */}
+                <section>
+                  <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-success" />
+                    API 호출 통계
+                  </h2>
+                  <Card className="divide-y divide-border">
+                    {apiStats.length === 0 ? (
+                      <div className="p-4 text-center text-text-tertiary">데이터가 없습니다</div>
+                    ) : (
+                      apiStats.slice(0, 5).map((stat, index) => (
+                        <div key={`${stat.method}-${stat.path}`} className="flex items-center gap-3 p-4">
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
+                            index === 0 ? "bg-yellow-500/20 text-yellow-500" :
+                            index === 1 ? "bg-gray-300/20 text-gray-400" :
+                            index === 2 ? "bg-orange-500/20 text-orange-500" :
+                            "bg-surface-elevated text-text-tertiary"
+                          }`}>
+                            {index + 1}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${
+                                stat.method === "GET" ? "bg-blue-500/20 text-blue-500" :
+                                stat.method === "POST" ? "bg-green-500/20 text-green-500" :
+                                stat.method === "PUT" ? "bg-yellow-500/20 text-yellow-500" :
+                                stat.method === "DELETE" ? "bg-red-500/20 text-red-500" :
+                                "bg-gray-500/20 text-gray-500"
+                              }`}>
+                                {stat.method}
+                              </span>
+                              <p className="font-medium text-text-primary truncate">{stat.path}</p>
+                            </div>
+                            {stat.avgDuration && (
+                              <p className="text-xs text-text-tertiary mt-0.5">평균 {stat.avgDuration}ms</p>
+                            )}
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-success">{stat.count.toLocaleString()}</p>
+                            <p className="text-xs text-text-tertiary">호출</p>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </Card>
+                </section>
+              </div>
             </div>
           )}
 
@@ -2651,10 +2768,12 @@ export function AdminDashboard({
                           </span>
                           <span className="text-text-tertiary">{formatRelativeTime(new Date(log.createdAt))}</span>
                         </div>
-                        {(log.ipAddress || log.metadata?.location) && (
+                        {(log.ipAddress || (log.metadata as { location?: string } | null)?.location) && (
                           <div className="mt-2 pt-2 border-t border-border text-xs text-text-tertiary">
                             {log.ipAddress && <span className="font-mono">{log.ipAddress}</span>}
-                            {log.metadata?.location && <span className="ml-2">{log.metadata.location}</span>}
+                            {(log.metadata as { location?: string } | null)?.location && (
+                              <span className="ml-2">{(log.metadata as { location?: string }).location}</span>
+                            )}
                           </div>
                         )}
                       </Card>
@@ -2707,9 +2826,128 @@ export function AdminDashboard({
                               <td className="px-4 py-3 text-sm text-text-secondary">{formatRelativeTime(new Date(log.createdAt))}</td>
                               <td className="px-4 py-3 hidden lg:table-cell">
                                 <div className="text-sm font-mono text-text-tertiary">{log.ipAddress || "-"}</div>
-                                {log.metadata?.location && (
-                                  <div className="text-xs text-text-tertiary mt-0.5">{log.metadata.location}</div>
+                                {(log.metadata as { location?: string } | null)?.location && (
+                                  <div className="text-xs text-text-tertiary mt-0.5">
+                                    {(log.metadata as { location?: string }).location}
+                                  </div>
                                 )}
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* API Logs View */}
+          {activeView === "api-logs" && (
+            <div className="space-y-4">
+              {apiLogs.length === 0 ? (
+                <Card className="text-center py-12">
+                  <Activity className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+                  <p className="text-text-secondary">API 로그가 없습니다</p>
+                </Card>
+              ) : (
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {apiLogs.map((log) => (
+                      <Card key={log.id} className="p-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                            log.method === "GET" ? "bg-blue-500/20 text-blue-500" :
+                            log.method === "POST" ? "bg-green-500/20 text-green-500" :
+                            log.method === "PUT" ? "bg-yellow-500/20 text-yellow-500" :
+                            log.method === "DELETE" ? "bg-red-500/20 text-red-500" :
+                            "bg-gray-500/20 text-gray-500"
+                          }`}>
+                            {log.method}
+                          </span>
+                          <span className="font-mono text-sm text-text-primary truncate flex-1">{log.path}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <div className="flex items-center gap-2">
+                            {log.statusCode && (
+                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
+                                log.statusCode >= 200 && log.statusCode < 300 ? "bg-success/10 text-success" :
+                                log.statusCode >= 400 ? "bg-error/10 text-error" :
+                                "bg-warning/10 text-warning"
+                              }`}>
+                                {log.statusCode}
+                              </span>
+                            )}
+                            {log.duration && (
+                              <span className="text-text-tertiary">{log.duration}ms</span>
+                            )}
+                          </div>
+                          <span className="text-text-tertiary">{formatRelativeTime(new Date(log.createdAt))}</span>
+                        </div>
+                        {log.ipAddress && (
+                          <div className="mt-2 pt-2 border-t border-border text-xs text-text-tertiary font-mono">
+                            {log.ipAddress}
+                          </div>
+                        )}
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[700px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">Method</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">Path</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">Status</th>
+                            <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Duration</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">시간</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">IP</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {apiLogs.map((log) => (
+                            <tr
+                              key={log.id}
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${
+                                  log.method === "GET" ? "bg-blue-500/20 text-blue-500" :
+                                  log.method === "POST" ? "bg-green-500/20 text-green-500" :
+                                  log.method === "PUT" ? "bg-yellow-500/20 text-yellow-500" :
+                                  log.method === "DELETE" ? "bg-red-500/20 text-red-500" :
+                                  "bg-gray-500/20 text-gray-500"
+                                }`}>
+                                  {log.method}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <span className="font-mono text-sm text-text-primary">{log.path}</span>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {log.statusCode ? (
+                                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
+                                    log.statusCode >= 200 && log.statusCode < 300 ? "bg-success/10 text-success" :
+                                    log.statusCode >= 400 ? "bg-error/10 text-error" :
+                                    "bg-warning/10 text-warning"
+                                  }`}>
+                                    {log.statusCode}
+                                  </span>
+                                ) : (
+                                  <span className="text-text-tertiary">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-right text-sm text-text-secondary">
+                                {log.duration ? `${log.duration}ms` : "-"}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-secondary">{formatRelativeTime(new Date(log.createdAt))}</td>
+                              <td className="px-4 py-3 hidden lg:table-cell">
+                                <span className="text-sm font-mono text-text-tertiary">{log.ipAddress || "-"}</span>
                               </td>
                             </tr>
                           ))}

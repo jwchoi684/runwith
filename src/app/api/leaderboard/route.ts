@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       id: true,
       name: true,
       image: true,
-      crewMemberships: {
+      crews: {
         select: {
           crew: {
             select: { name: true }
@@ -128,7 +128,7 @@ export async function GET(request: NextRequest) {
   const leaderboard = stats
     .map((stat) => {
       const user = userMap.get(stat.userId);
-      const crewName = user?.crewMemberships?.[0]?.crew?.name || null;
+      const crewName = user?.crews?.[0]?.crew?.name || null;
       return {
         userId: stat.userId,
         userName: user?.name || null,

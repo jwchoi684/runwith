@@ -169,6 +169,45 @@ export default async function AdminPage() {
     },
   });
 
+  // Fetch API logs (최근 100개)
+  const apiLogs = await prisma.apiLog.findMany({
+    take: 100,
+    orderBy: { createdAt: "desc" },
+  });
+
+  // Calculate page view statistics (top pages)
+  const pageStatsRaw = await prisma.accessLog.groupBy({
+    by: ["path"],
+    where: {
+      action: "page_view",
+      path: { not: null },
+    },
+    _count: { id: true },
+    orderBy: { _count: { id: "desc" } },
+    take: 10,
+  });
+
+  const pageStats = pageStatsRaw.map((stat) => ({
+    path: stat.path || "/",
+    count: stat._count.id,
+  }));
+
+  // Calculate API call statistics (top APIs)
+  const apiStatsRaw = await prisma.apiLog.groupBy({
+    by: ["path", "method"],
+    _count: { id: true },
+    _avg: { duration: true },
+    orderBy: { _count: { id: "desc" } },
+    take: 10,
+  });
+
+  const apiStats = apiStatsRaw.map((stat) => ({
+    path: stat.path,
+    method: stat.method,
+    count: stat._count.id,
+    avgDuration: stat._avg.duration ? Math.round(stat._avg.duration) : null,
+  }));
+
   return (
     <AdminDashboard
       users={users}
@@ -180,6 +219,9 @@ export default async function AdminPage() {
       crewMembers={crewMembers}
       paceGroups={paceGroups}
       accessLogs={accessLogs}
+      apiLogs={apiLogs}
+      pageStats={pageStats}
+      apiStats={apiStats}
       currentUserId={session.user.id}
     />
   );

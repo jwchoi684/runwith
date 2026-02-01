@@ -48,19 +48,13 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 flex items-center justify-center p-4">
-      {/* Background decoration */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-orange-500/20 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-orange-600/20 rounded-full blur-3xl" />
-      </div>
-
-      <div className="relative w-full max-w-md">
+    <div className="min-h-screen bg-background flex items-center justify-center p-5">
+      <div className="w-full max-w-sm">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-orange-400 to-orange-600 rounded-2xl shadow-lg shadow-orange-500/30 mb-4">
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-primary rounded-3xl mb-5">
             <svg
-              className="w-8 h-8 text-white"
+              className="w-10 h-10 text-white"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
@@ -73,13 +67,13 @@ export default function LoginPage() {
               />
             </svg>
           </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Running Crew</h1>
-          <p className="text-slate-400">함께 달리고, 함께 성장하세요</p>
+          <h1 className="text-2xl font-bold text-text-primary mb-2">Running Crew</h1>
+          <p className="text-text-tertiary text-sm">함께 달리고, 함께 성장하세요</p>
         </div>
 
         {/* Login Card */}
-        <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-8 shadow-xl">
-          <h2 className="text-xl font-semibold text-white mb-6 text-center">
+        <div className="bg-surface rounded-2xl p-6 shadow-toss">
+          <h2 className="text-lg font-bold text-text-primary mb-5 text-center">
             로그인
           </h2>
 
@@ -87,7 +81,7 @@ export default function LoginPage() {
             {/* Kakao Login - 인앱 브라우저에서도 가능 */}
             <button
               onClick={handleKakaoLogin}
-              className="w-full flex items-center justify-center gap-3 bg-[#FEE500] hover:bg-[#FDD800] text-[#191919] font-medium py-3 px-4 rounded-xl transition-all duration-200 hover:shadow-lg"
+              className="w-full flex items-center justify-center gap-3 bg-[#FEE500] hover:bg-[#FDD800] text-[#191919] font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
                 <path d="M12 3C6.477 3 2 6.463 2 10.691c0 2.65 1.734 4.974 4.338 6.32-.173.63-.63 2.287-.721 2.641-.112.436.16.43.337.313.14-.093 2.23-1.516 3.134-2.13.61.088 1.24.134 1.912.134 5.523 0 10-3.463 10-7.278C22 6.463 17.523 3 12 3z"/>
@@ -98,18 +92,18 @@ export default function LoginPage() {
             {/* Google Login */}
             {isInAppBrowser ? (
               <div className="space-y-3">
-                <div className="bg-slate-700/30 border border-slate-600/30 rounded-xl p-3">
-                  <p className="text-slate-400 text-xs text-center">
+                <div className="bg-surface-elevated rounded-xl p-3">
+                  <p className="text-text-tertiary text-xs text-center">
                     Google 로그인은 외부 브라우저에서만 가능합니다
                   </p>
                 </div>
                 <button
                   onClick={handleCopyLink}
-                  className="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200"
+                  className="w-full flex items-center justify-center gap-2 bg-surface-elevated hover:bg-border text-text-primary font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 active:scale-[0.98]"
                 >
                   {showCopySuccess ? (
                     <>
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="w-5 h-5 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
                       링크 복사됨!
@@ -119,7 +113,7 @@ export default function LoginPage() {
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      외부 브라우저로 열기 (링크 복사)
+                      외부 브라우저로 열기
                     </>
                   )}
                 </button>
@@ -127,7 +121,7 @@ export default function LoginPage() {
             ) : (
               <button
                 onClick={handleGoogleLogin}
-                className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-medium py-3 px-4 rounded-xl transition-all duration-200 hover:shadow-lg"
+                className="w-full flex items-center justify-center gap-3 bg-surface-elevated hover:bg-border text-text-primary font-semibold py-3.5 px-4 rounded-xl transition-all duration-200 active:scale-[0.98] border border-border"
               >
                 <svg className="w-5 h-5" viewBox="0 0 24 24">
                   <path
@@ -153,7 +147,7 @@ export default function LoginPage() {
           </div>
 
           {/* Footer */}
-          <p className="text-center text-slate-400 text-sm mt-6">
+          <p className="text-center text-text-tertiary text-xs mt-6">
             간편하게 로그인하고 시작하세요
           </p>
         </div>

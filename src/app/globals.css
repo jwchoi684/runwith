@@ -1,33 +1,34 @@
 @import "tailwindcss";
 
-/* Toss-style Design Tokens */
+/* Toss-style Design Tokens - Light Mode */
 :root {
   /* Backgrounds */
-  --background: #121417;
-  --surface: #1C1F24;
-  --surface-elevated: #252932;
+  --background: #F4F4F4;
+  --surface: #FFFFFF;
+  --surface-elevated: #F7F8FA;
 
   /* Primary */
   --primary: #3182F6;
   --primary-dark: #1B64DA;
-  --primary-light: #5B9CF6;
+  --primary-light: #E8F3FF;
 
   /* Semantic */
-  --success: #2EC4B6;
-  --warning: #FFBE0B;
-  --error: #FF6B6B;
+  --success: #00C853;
+  --warning: #FF9100;
+  --error: #F04452;
 
   /* Text */
-  --text-primary: #FFFFFF;
-  --text-secondary: #8B95A1;
-  --text-tertiary: #4E5968;
+  --text-primary: #191F28;
+  --text-secondary: #4E5968;
+  --text-tertiary: #8B95A1;
+  --text-disabled: #B0B8C1;
 
   /* Borders */
-  --border: #2E3238;
-  --border-light: #3D4450;
+  --border: #E5E8EB;
+  --border-light: #F2F4F6;
 
   /* Overlays */
-  --overlay: rgba(0, 0, 0, 0.7);
+  --overlay: rgba(0, 0, 0, 0.4);
 
   /* Foreground for Tailwind */
   --foreground: var(--text-primary);
@@ -51,6 +52,7 @@
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
   --color-text-tertiary: var(--text-tertiary);
+  --color-text-disabled: var(--text-disabled);
 
   --color-border: var(--border);
   --color-border-light: var(--border-light);
@@ -60,11 +62,16 @@
   --font-mono: var(--font-geist-mono);
 
   /* Border Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 14px;
-  --radius-xl: 20px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
   --radius-full: 9999px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
 }
 
 /* Base Styles */
@@ -84,8 +91,8 @@ body {
 
 /* Custom Scrollbar - Toss Style */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 4px;
+  height: 4px;
 }
 
 ::-webkit-scrollbar-track {
@@ -98,7 +105,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--border-light);
+  background: var(--text-tertiary);
 }
 
 /* Focus States */
@@ -109,8 +116,8 @@ body {
 
 /* Selection */
 ::selection {
-  background: var(--primary);
-  color: white;
+  background: var(--primary-light);
+  color: var(--primary-dark);
 }
 
 /* Safe Area for PWA */
@@ -120,4 +127,13 @@ body {
 
 .safe-area-top {
   padding-top: env(safe-area-inset-top, 0);
+}
+
+/* Toss-style shadows */
+.shadow-toss {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.shadow-toss-lg {
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
 }

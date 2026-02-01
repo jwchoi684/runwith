@@ -4,8 +4,8 @@
   "description": "마라톤 기록을 크루와 함께 공유하세요",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#121417",
-  "theme_color": "#121417",
+  "background_color": "#F4F4F4",
+  "theme_color": "#3182F6",
   "orientation": "portrait",
   "icons": [
     {

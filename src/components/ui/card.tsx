@@ -4,21 +4,22 @@ import { motion, type HTMLMotionProps } from "framer-motion";
 import { forwardRef } from "react";
 
 interface CardProps extends HTMLMotionProps<"div"> {
-  variant?: "default" | "elevated" | "interactive";
+  variant?: "default" | "elevated" | "interactive" | "outline";
   padding?: "none" | "sm" | "md" | "lg";
 }
 
 const variantStyles = {
-  default: "bg-surface",
-  elevated: "bg-surface-elevated",
-  interactive: "bg-surface hover:bg-surface-elevated cursor-pointer",
+  default: "bg-surface shadow-toss",
+  elevated: "bg-surface shadow-toss-lg",
+  interactive: "bg-surface shadow-toss hover:shadow-toss-lg cursor-pointer",
+  outline: "bg-surface border border-border",
 };
 
 const paddingStyles = {
   none: "",
   sm: "p-3",
   md: "p-4",
-  lg: "p-6",
+  lg: "p-5",
 };
 
 export const Card = forwardRef<HTMLDivElement, CardProps>(
@@ -38,7 +39,7 @@ export const Card = forwardRef<HTMLDivElement, CardProps>(
       <motion.div
         ref={ref}
         className={`
-          rounded-[--radius-lg] border border-border
+          rounded-[--radius-lg]
           ${variantStyles[variant]}
           ${paddingStyles[padding]}
           ${className}
@@ -71,9 +72,9 @@ export function CardHeader({
   return (
     <div className={`flex items-start justify-between ${className}`}>
       <div>
-        <h3 className="text-lg font-semibold text-text-primary">{title}</h3>
+        <h3 className="text-lg font-bold text-text-primary">{title}</h3>
         {subtitle && (
-          <p className="text-sm text-text-secondary mt-0.5">{subtitle}</p>
+          <p className="text-sm text-text-tertiary mt-0.5">{subtitle}</p>
         )}
       </div>
       {action && <div>{action}</div>}

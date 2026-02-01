@@ -32,9 +32,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async jwt({ token, user, account, trigger }) {
       // Initial sign in
       if (account && user) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: user.id },
+          select: { role: true },
+        });
         return {
           ...token,
           id: user.id,
+          role: dbUser?.role || "user",
           accessToken: account.access_token,
         };
       }
@@ -46,6 +51,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         });
         if (dbUser) {
           token.id = dbUser.id;
+          token.role = dbUser.role;
+        }
+      }
+
+      // Refresh role from DB periodically (for role changes to take effect)
+      if (token.id && !token.role) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { role: true },
+        });
+        if (dbUser) {
+          token.role = dbUser.role;
         }
       }
 
@@ -54,6 +71,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string;
+        session.user.role = token.role as string;
       }
       return session;
     },

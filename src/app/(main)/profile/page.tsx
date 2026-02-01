@@ -11,6 +11,7 @@ import {
   Target,
   Flame,
   ChevronRight,
+  Shield,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -35,6 +36,13 @@ export default async function ProfilePage() {
   const crewsCount = await prisma.crewMember.count({
     where: { userId: user?.id },
   });
+
+  // Check if user is admin
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user?.id },
+    select: { role: true },
+  });
+  const isAdmin = dbUser?.role === "admin";
 
   // Calculate achievements
   const hasFirstRun = totalRuns >= 1;
@@ -129,6 +137,17 @@ export default async function ProfilePage() {
       {/* Settings Menu */}
       <section>
         <div className="space-y-1">
+          {isAdmin && (
+            <Link href="/admin">
+              <div className="w-full flex items-center justify-between p-4 rounded-[--radius-lg] hover:bg-surface-elevated transition-colors duration-200 bg-primary/5">
+                <div className="flex items-center gap-3">
+                  <span className="text-primary"><Shield className="w-5 h-5" /></span>
+                  <span className="font-medium text-primary">관리자 대시보드</span>
+                </div>
+                <ChevronRight className="w-5 h-5 text-primary" />
+              </div>
+            </Link>
+          )}
           <MenuItem icon={<Bell className="w-5 h-5" />} label="알림 설정" />
           <MenuItem icon={<Lock className="w-5 h-5" />} label="개인정보 설정" />
           <MenuItem icon={<HelpCircle className="w-5 h-5" />} label="도움말" />

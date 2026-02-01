@@ -32,7 +32,7 @@ export function BottomNav() {
               className="flex flex-col items-center justify-center w-16 h-full relative"
             >
               <motion.div
-                className="flex flex-col items-center gap-1"
+                className="flex flex-col items-center gap-0.5"
                 whileTap={{ scale: 0.9 }}
                 transition={{ duration: 0.1 }}
               >
@@ -41,7 +41,7 @@ export function BottomNav() {
                   className={
                     isActive ? "text-primary" : "text-text-tertiary"
                   }
-                  strokeWidth={isActive ? 2.5 : 2}
+                  strokeWidth={isActive ? 2.5 : 1.8}
                 />
                 <span
                   className={`text-[10px] font-medium ${
@@ -51,13 +51,6 @@ export function BottomNav() {
                   {item.label}
                 </span>
               </motion.div>
-              {isActive && (
-                <motion.div
-                  layoutId="bottomNavIndicator"
-                  className="absolute top-0 left-1/2 -translate-x-1/2 w-12 h-0.5 bg-primary rounded-full"
-                  transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                />
-              )}
             </Link>
           );
         })}

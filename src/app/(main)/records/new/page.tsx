@@ -105,6 +105,7 @@ export default function NewRecordPage() {
       eventId: event.id,
       eventName: event.name,
       distance: event.distance.toString(),
+      date: event.date || formData.date,
     });
     setShowEventDropdown(false);
     setEventSearchQuery("");
@@ -271,13 +272,13 @@ export default function NewRecordPage() {
                       className="mt-1 w-full bg-surface border border-border rounded-lg px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
-                  <div>
+                  <div className="overflow-hidden">
                     <label className="text-xs text-text-tertiary">대회 날짜</label>
                     <input
                       type="date"
                       value={newEvent.date}
                       onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
-                      className="mt-1 w-full bg-surface border border-border rounded-lg px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                      className="mt-1 w-full min-w-0 max-w-full bg-surface border border-border rounded-lg px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
                   <div>
@@ -397,21 +398,23 @@ export default function NewRecordPage() {
           </Card>
         )}
 
-        {/* Date */}
-        <Card>
-          <label className="block">
-            <span className="text-sm font-medium text-text-secondary">날짜</span>
-            <input
-              type="date"
-              value={formData.date}
-              onChange={(e) =>
-                setFormData({ ...formData, date: e.target.value })
-              }
-              className="mt-2 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
-              required
-            />
-          </label>
-        </Card>
+        {/* Date - Only show for non-race records */}
+        {!(isRaceRecord && formData.eventId) && (
+          <Card className="overflow-hidden">
+            <label className="block">
+              <span className="text-sm font-medium text-text-secondary">날짜</span>
+              <input
+                type="date"
+                value={formData.date}
+                onChange={(e) =>
+                  setFormData({ ...formData, date: e.target.value })
+                }
+                className="mt-2 w-full min-w-0 max-w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                required
+              />
+            </label>
+          </Card>
+        )}
 
         {/* Distance - Hidden if event is selected */}
         {!isRaceRecord && (
@@ -459,12 +462,24 @@ export default function NewRecordPage() {
           </Card>
         )}
 
-        {/* Show selected distance for race record */}
+        {/* Show selected event info for race record */}
         {isRaceRecord && formData.eventId && (
           <Card>
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-text-secondary">거리</span>
-              <span className="text-xl font-bold text-primary">{formData.distance} km</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-text-secondary">대회 날짜</span>
+                <span className="text-base font-medium text-text-primary">
+                  {new Date(formData.date).toLocaleDateString("ko-KR", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </span>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-text-secondary">거리</span>
+                <span className="text-xl font-bold text-primary">{formData.distance} km</span>
+              </div>
             </div>
           </Card>
         )}

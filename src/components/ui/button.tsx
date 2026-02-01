@@ -3,7 +3,7 @@
 import { motion, type HTMLMotionProps } from "framer-motion";
 import { forwardRef } from "react";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "outline";
 type ButtonSize = "sm" | "md" | "lg";
 
 interface ButtonProps extends Omit<HTMLMotionProps<"button">, "size"> {
@@ -14,18 +14,17 @@ interface ButtonProps extends Omit<HTMLMotionProps<"button">, "size"> {
 }
 
 const variantStyles: Record<ButtonVariant, string> = {
-  primary: "bg-primary text-white hover:bg-primary-dark active:bg-primary-dark",
-  secondary:
-    "bg-surface-elevated text-text-primary hover:bg-border active:bg-border",
-  ghost:
-    "bg-transparent text-text-secondary hover:bg-surface-elevated active:bg-surface-elevated",
+  primary: "bg-primary text-white hover:bg-primary-dark active:bg-primary-dark shadow-sm",
+  secondary: "bg-surface-elevated text-text-primary hover:bg-border active:bg-border",
+  ghost: "bg-transparent text-text-secondary hover:bg-surface-elevated active:bg-border",
   danger: "bg-error text-white hover:opacity-90 active:opacity-80",
+  outline: "bg-transparent border-2 border-primary text-primary hover:bg-primary-light active:bg-primary-light",
 };
 
 const sizeStyles: Record<ButtonSize, string> = {
-  sm: "h-9 px-4 text-sm rounded-[--radius-md]",
-  md: "h-12 px-6 text-base rounded-[--radius-lg]",
-  lg: "h-14 px-8 text-lg rounded-[--radius-lg]",
+  sm: "h-9 px-4 text-sm font-medium rounded-[--radius-md]",
+  md: "h-12 px-6 text-base font-semibold rounded-[--radius-lg]",
+  lg: "h-14 px-8 text-lg font-semibold rounded-[--radius-lg]",
 };
 
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
@@ -47,9 +46,9 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         ref={ref}
         disabled={disabled || loading}
         className={`
-          inline-flex items-center justify-center font-semibold
-          transition-colors duration-200
-          disabled:opacity-50 disabled:cursor-not-allowed
+          inline-flex items-center justify-center
+          transition-all duration-200
+          disabled:opacity-40 disabled:cursor-not-allowed
           ${variantStyles[variant]}
           ${sizeStyles[size]}
           ${fullWidth ? "w-full" : ""}

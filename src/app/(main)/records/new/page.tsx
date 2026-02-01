@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cloud, Sun, CloudRain, Snowflake, ChevronDown, Trophy, MapPin } from "lucide-react";
+import { ArrowLeft, Cloud, Sun, CloudRain, Snowflake, ChevronDown, Trophy, MapPin, Search, Plus, X } from "lucide-react";
 import Link from "next/link";
 
 interface MarathonEvent {
@@ -12,6 +12,7 @@ interface MarathonEvent {
   name: string;
   location: string | null;
   distance: number;
+  date: string | null;
 }
 
 const weatherOptions = [
@@ -37,13 +38,29 @@ const distanceFilters = [
   { label: "5K", value: "5" },
 ];
 
+const distancePresets = [
+  { label: "5K", value: "5" },
+  { label: "10K", value: "10" },
+  { label: "하프", value: "21.0975" },
+  { label: "풀마라톤", value: "42.195" },
+];
+
 export default function NewRecordPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
   const [isRaceRecord, setIsRaceRecord] = useState(false);
   const [events, setEvents] = useState<MarathonEvent[]>([]);
   const [showEventDropdown, setShowEventDropdown] = useState(false);
+  const [showAddEvent, setShowAddEvent] = useState(false);
   const [selectedDistanceFilter, setSelectedDistanceFilter] = useState("all");
+  const [eventSearchQuery, setEventSearchQuery] = useState("");
+  const [newEvent, setNewEvent] = useState({
+    name: "",
+    date: new Date().toISOString().split("T")[0],
+    distance: "42.195",
+  });
+  const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
     distance: "",
@@ -90,18 +107,54 @@ export default function NewRecordPage() {
       distance: event.distance.toString(),
     });
     setShowEventDropdown(false);
+    setEventSearchQuery("");
+  };
+
+  const handleCreateEvent = async () => {
+    if (!newEvent.name.trim()) return;
+
+    setIsCreatingEvent(true);
+    try {
+      const response = await fetch("/api/events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: newEvent.name.trim(),
+          distance: newEvent.distance,
+          date: newEvent.date,
+        }),
+      });
+
+      if (response.ok) {
+        const createdEvent = await response.json();
+        setEvents([createdEvent, ...events]);
+        handleEventSelect(createdEvent);
+        setShowAddEvent(false);
+        setNewEvent({
+          name: "",
+          date: new Date().toISOString().split("T")[0],
+          distance: "42.195",
+        });
+      }
+    } catch (error) {
+      console.error("Failed to create event:", error);
+    } finally {
+      setIsCreatingEvent(false);
+    }
   };
 
   const filteredEvents = events.filter(event => {
-    if (selectedDistanceFilter === "all") return true;
-    return event.distance === parseFloat(selectedDistanceFilter);
+    const matchesDistance = selectedDistanceFilter === "all" || event.distance === parseFloat(selectedDistanceFilter);
+    const matchesSearch = eventSearchQuery === "" ||
+      event.name.toLowerCase().includes(eventSearchQuery.toLowerCase()) ||
+      (event.location && event.location.toLowerCase().includes(eventSearchQuery.toLowerCase()));
+    return matchesDistance && matchesSearch;
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
-    // Calculate duration in seconds
     const duration =
       (parseInt(formData.hours) || 0) * 3600 +
       (parseInt(formData.minutes) || 0) * 60 +
@@ -182,10 +235,97 @@ export default function NewRecordPage() {
         {/* Marathon Event Selection */}
         {isRaceRecord && (
           <Card>
-            <span className="text-sm font-medium text-text-secondary">대회 선택</span>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-text-secondary">대회 선택</span>
+              <button
+                type="button"
+                onClick={() => setShowAddEvent(true)}
+                className="text-xs text-primary font-medium flex items-center gap-1"
+              >
+                <Plus className="w-3 h-3" />
+                대회 추가
+              </button>
+            </div>
+
+            {/* Add New Event Modal */}
+            {showAddEvent && (
+              <div className="mb-4 p-4 bg-surface-elevated rounded-xl border border-border">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-sm font-medium text-text-primary">새 대회 등록</span>
+                  <button
+                    type="button"
+                    onClick={() => setShowAddEvent(false)}
+                    className="text-text-tertiary hover:text-text-primary"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="space-y-3">
+                  <div>
+                    <label className="text-xs text-text-tertiary">대회명</label>
+                    <input
+                      type="text"
+                      value={newEvent.name}
+                      onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
+                      placeholder="예: 2025 서울마라톤"
+                      className="mt-1 w-full bg-surface border border-border rounded-lg px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-tertiary">대회 날짜</label>
+                    <input
+                      type="date"
+                      value={newEvent.date}
+                      onChange={(e) => setNewEvent({ ...newEvent, date: e.target.value })}
+                      className="mt-1 w-full bg-surface border border-border rounded-lg px-3 py-2 text-text-primary text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-text-tertiary">거리</label>
+                    <div className="flex gap-2 mt-1">
+                      {distancePresets.map((preset) => (
+                        <button
+                          key={preset.value}
+                          type="button"
+                          onClick={() => setNewEvent({ ...newEvent, distance: preset.value })}
+                          className={`flex-1 py-2 px-2 rounded-lg border text-xs font-medium transition-all ${
+                            newEvent.distance === preset.value
+                              ? "bg-primary/10 border-primary text-primary"
+                              : "bg-surface border-border text-text-secondary hover:border-text-secondary"
+                          }`}
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <Button
+                    type="button"
+                    onClick={handleCreateEvent}
+                    disabled={!newEvent.name.trim() || isCreatingEvent}
+                    className="w-full"
+                    size="sm"
+                  >
+                    {isCreatingEvent ? "등록 중..." : "대회 등록"}
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {/* Search Input */}
+            <div className="relative mb-3">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+              <input
+                type="text"
+                value={eventSearchQuery}
+                onChange={(e) => setEventSearchQuery(e.target.value)}
+                placeholder="대회명 검색..."
+                className="w-full bg-surface-elevated border border-border rounded-lg pl-9 pr-4 py-2.5 text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary"
+              />
+            </div>
 
             {/* Distance Filter */}
-            <div className="flex gap-2 mt-2 mb-3 overflow-x-auto pb-1">
+            <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
               {distanceFilters.map((filter) => (
                 <button
                   key={filter.value}
@@ -221,8 +361,8 @@ export default function NewRecordPage() {
               {showEventDropdown && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-xl shadow-lg z-10 max-h-64 overflow-y-auto">
                   {filteredEvents.length === 0 ? (
-                    <div className="px-4 py-3 text-text-tertiary text-sm">
-                      해당 거리의 대회가 없습니다
+                    <div className="px-4 py-3 text-text-tertiary text-sm text-center">
+                      {eventSearchQuery ? "검색 결과가 없습니다" : "해당 거리의 대회가 없습니다"}
                     </div>
                   ) : (
                     filteredEvents.map((event) => (

@@ -1545,31 +1545,53 @@ export function AdminDashboard({
                   <p className="text-center text-text-tertiary py-8">기록이 없습니다</p>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
-                  {recentRecords.map((record) => (
-                    <Card
-                      key={record.id}
-                      className="flex items-center gap-3 cursor-pointer hover:shadow-toss-lg transition-all"
-                      onClick={() => openUserDetail(record.user.id)}
-                    >
-                      {record.user.image ? (
-                        <Image src={record.user.image} alt="" width={40} height={40} className="rounded-full" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
-                          {record.user.name?.[0]?.toUpperCase() || "U"}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-text-primary truncate">{record.user.name || record.user.email}</p>
-                        <p className="text-sm text-text-tertiary">{record.event?.name || "개인 기록"} · {record.distance.toFixed(2)}km</p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-medium text-text-primary">{formatDuration(record.duration)}</p>
-                        <p className="text-xs text-text-tertiary">{formatDate(record.date)}</p>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
+                <Card className="overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[900px]">
+                      <thead>
+                        <tr className="bg-surface-elevated border-b border-border">
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회/기록</th>
+                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">거리</th>
+                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">시간</th>
+                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">페이스</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {recentRecords.map((record) => (
+                          <tr
+                            key={record.id}
+                            onClick={() => openUserDetail(record.user.id)}
+                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                {record.user.image ? (
+                                  <Image src={record.user.image} alt="" width={36} height={36} className="rounded-full" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                                    {record.user.name?.[0]?.toUpperCase() || "U"}
+                                  </div>
+                                )}
+                                <span className="font-medium text-text-primary">{record.user.name || record.user.email}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-text-secondary">{record.event?.name || "개인 기록"}</td>
+                            <td className="px-4 py-3 text-right text-sm font-medium text-text-primary">{record.distance.toFixed(2)} km</td>
+                            <td className="px-4 py-3 text-right text-sm font-mono text-primary font-medium">{formatDuration(record.duration)}</td>
+                            <td className="px-4 py-3 text-right text-sm text-text-secondary">{formatPace(record.pace)} /km</td>
+                            <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(record.date)}</td>
+                            <td className="px-4 py-3 text-center">
+                              <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
               )}
             </div>
           )}
@@ -1593,34 +1615,68 @@ export function AdminDashboard({
                   <p className="text-center text-text-tertiary py-8">크루가 없습니다</p>
                 </Card>
               ) : (
-                <div className="grid grid-cols-1 xl:grid-cols-2 2xl:grid-cols-3 gap-4">
-                  {filteredCrews.map((crew) => (
-                    <Card
-                      key={crew.id}
-                      className="flex items-center gap-3 cursor-pointer hover:shadow-toss-lg transition-all"
-                      onClick={() => openCrewDetail(crew.id)}
-                    >
-                      <div className="w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-white font-bold text-lg">
-                        {crew.name.charAt(0)}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-text-primary truncate">{crew.name}</p>
-                          {crew.isPublic ? (
-                            <Globe className="w-4 h-4 text-text-tertiary" />
-                          ) : (
-                            <Lock className="w-4 h-4 text-text-tertiary" />
-                          )}
-                        </div>
-                        <p className="text-sm text-text-tertiary truncate">{crew.description || "설명 없음"}</p>
-                        <p className="text-xs text-text-tertiary mt-1">
-                          크루장: {crew.owner.name || crew.owner.email} · 멤버 {crew._count.members}명
-                        </p>
-                      </div>
-                      <ChevronRight className="w-5 h-5 text-text-tertiary" />
-                    </Card>
-                  ))}
-                </div>
+                <Card className="overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[800px]">
+                      <thead>
+                        <tr className="bg-surface-elevated border-b border-border">
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">크루</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">설명</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">크루장</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">멤버</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">공개</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">생성일</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredCrews.map((crew) => (
+                          <tr
+                            key={crew.id}
+                            onClick={() => openCrewDetail(crew.id)}
+                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                          >
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-white font-bold">
+                                  {crew.name.charAt(0)}
+                                </div>
+                                <span className="font-medium text-text-primary">{crew.name}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-text-secondary max-w-[200px] truncate">
+                              {crew.description || "-"}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                {crew.owner.image ? (
+                                  <Image src={crew.owner.image} alt="" width={24} height={24} className="rounded-full" />
+                                ) : (
+                                  <div className="w-6 h-6 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary text-xs font-medium">
+                                    {crew.owner.name?.[0]?.toUpperCase() || "U"}
+                                  </div>
+                                )}
+                                <span className="text-sm text-text-secondary">{crew.owner.name || crew.owner.email}</span>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm font-medium text-text-primary">{crew._count.members}</td>
+                            <td className="px-4 py-3 text-center">
+                              {crew.isPublic ? (
+                                <span className="px-2 py-1 bg-success/10 text-success text-xs font-medium rounded-full">공개</span>
+                              ) : (
+                                <span className="px-2 py-1 bg-warning/10 text-warning text-xs font-medium rounded-full">비공개</span>
+                              )}
+                            </td>
+                            <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(crew.createdAt)}</td>
+                            <td className="px-4 py-3 text-center">
+                              <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
               )}
             </div>
           )}
@@ -1685,99 +1741,102 @@ export function AdminDashboard({
                 </div>
               )}
 
-              <Card className="divide-y divide-border">
+              <Card className="overflow-hidden">
                 {filteredEvents.length === 0 ? (
                   <p className="text-center text-text-tertiary py-8">대회가 없습니다</p>
                 ) : (
-                  <>
-                    {/* Select All Header */}
-                    <div className="flex items-center gap-3 px-4 py-3 bg-surface-elevated">
-                      <button
-                        onClick={toggleAllEvents}
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
-                          selectedEventIds.size === filteredEvents.length && filteredEvents.length > 0
-                            ? "bg-primary border-primary text-white"
-                            : selectedEventIds.size > 0
-                            ? "bg-primary/50 border-primary text-white"
-                            : "border-border hover:border-text-secondary"
-                        }`}
-                      >
-                        {selectedEventIds.size > 0 && (
-                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </button>
-                      <span className="text-sm text-text-secondary">전체 선택</span>
-                    </div>
-
-                    {filteredEvents.map((event) => (
-                      <div key={event.id} className="flex items-center gap-3 p-4">
-                        <button
-                          onClick={() => toggleEventSelection(event.id)}
-                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
-                            selectedEventIds.has(event.id)
-                              ? "bg-primary border-primary text-white"
-                              : "border-border hover:border-text-secondary"
-                          }`}
-                        >
-                          {selectedEventIds.has(event.id) && (
-                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
-                            </svg>
-                          )}
-                        </button>
-                        <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
-                          <Trophy className="w-6 h-6 text-warning" />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <p className="font-medium text-text-primary truncate">{event.name}</p>
-                            {event.isOfficial && (
-                              <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-3 mt-1 text-sm text-text-tertiary flex-wrap">
-                            {event.location && (
-                              <span className="flex items-center gap-1">
-                                <MapPin className="w-3 h-3" />
-                                {event.location}
-                              </span>
-                            )}
-                            <span>{formatDistance(event.distance)}</span>
-                            {event.date && (
-                              <span className="flex items-center gap-1">
-                                <CalendarDays className="w-3 h-3" />
-                                {formatDate(event.date)}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-xs text-text-tertiary mt-1">
-                            기록 {event._count.runningLogs}개
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <button
-                            onClick={() => openEventModal(event)}
-                            className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[900px]">
+                      <thead>
+                        <tr className="bg-surface-elevated border-b border-border">
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary w-10">
+                            <button
+                              onClick={toggleAllEvents}
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                selectedEventIds.size === filteredEvents.length && filteredEvents.length > 0
+                                  ? "bg-primary border-primary text-white"
+                                  : selectedEventIds.size > 0
+                                  ? "bg-primary/50 border-primary text-white"
+                                  : "border-border hover:border-text-secondary"
+                              }`}
+                            >
+                              {selectedEventIds.size > 0 && (
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                          </th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회명</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">장소</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">거리</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">코스</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">기록</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">작업</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredEvents.map((event) => (
+                          <tr
+                            key={event.id}
+                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated transition-colors"
                           >
-                            <Edit2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteEvent(event.id)}
-                            disabled={deletingEventId === event.id}
-                            className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
-                          >
-                            {deletingEventId === event.id ? (
-                              <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
-                            ) : (
-                              <Trash2 className="w-4 h-4" />
-                            )}
-                          </button>
-                        </div>
-                      </div>
-                    ))}
-                  </>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => toggleEventSelection(event.id)}
+                                className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                                  selectedEventIds.has(event.id)
+                                    ? "bg-primary border-primary text-white"
+                                    : "border-border hover:border-text-secondary"
+                                }`}
+                              >
+                                {selectedEventIds.has(event.id) && (
+                                  <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                                  </svg>
+                                )}
+                              </button>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-text-primary">{event.name}</span>
+                                {event.isOfficial && (
+                                  <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-sm text-text-secondary">{event.location || "-"}</td>
+                            <td className="px-4 py-3 text-center text-sm text-text-primary">{formatDistance(event.distance)}</td>
+                            <td className="px-4 py-3 text-center text-xs text-text-tertiary">{event.courses || "-"}</td>
+                            <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(event.date)}</td>
+                            <td className="px-4 py-3 text-center text-sm text-text-secondary">{event._count.runningLogs}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => openEventModal(event)}
+                                  className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteEvent(event.id)}
+                                  disabled={deletingEventId === event.id}
+                                  className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  {deletingEventId === event.id ? (
+                                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </Card>
             </div>
@@ -1812,47 +1871,69 @@ export function AdminDashboard({
                 ))}
               </div>
 
-              <Card className="divide-y divide-border">
+              <Card className="overflow-hidden">
                 {filteredRankings.length === 0 ? (
                   <p className="text-center text-text-tertiary py-8">랭킹 데이터가 없습니다</p>
                 ) : (
-                  filteredRankings.map((rank, index) => (
-                    <div
-                      key={rank.userId}
-                      className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
-                      onClick={() => openUserDetail(rank.userId)}
-                    >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
-                        index === 0 ? "bg-yellow-100 text-yellow-700" :
-                        index === 1 ? "bg-gray-100 text-gray-600" :
-                        index === 2 ? "bg-orange-100 text-orange-700" :
-                        "bg-surface-elevated text-text-tertiary"
-                      }`}>
-                        {index < 3 ? (
-                          <Medal className="w-5 h-5" />
-                        ) : (
-                          index + 1
-                        )}
-                      </div>
-                      {rank.userImage ? (
-                        <Image src={rank.userImage} alt="" width={40} height={40} className="rounded-full" />
-                      ) : (
-                        <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
-                          {rank.userName?.[0]?.toUpperCase() || "U"}
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-text-primary truncate">{rank.userName}</p>
-                        <p className="text-sm text-text-tertiary">
-                          {rank.totalRuns}회 러닝
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-primary">{rank.totalDistance.toFixed(3)} km</p>
-                        <p className="text-xs text-text-tertiary">{formatDuration(rank.totalDuration)}</p>
-                      </div>
-                    </div>
-                  ))
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[700px]">
+                      <thead>
+                        <tr className="bg-surface-elevated border-b border-border">
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary w-16">순위</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
+                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">총 거리</th>
+                          <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">총 시간</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">러닝 횟수</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRankings.map((rank, index) => (
+                          <tr
+                            key={rank.userId}
+                            onClick={() => openUserDetail(rank.userId)}
+                            className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                          >
+                            <td className="px-4 py-3 text-center">
+                              <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold mx-auto ${
+                                index === 0 ? "bg-yellow-100 text-yellow-700" :
+                                index === 1 ? "bg-gray-100 text-gray-600" :
+                                index === 2 ? "bg-orange-100 text-orange-700" :
+                                "bg-surface-elevated text-text-tertiary"
+                              }`}>
+                                {index < 3 ? (
+                                  <Medal className="w-4 h-4" />
+                                ) : (
+                                  <span className="text-sm">{index + 1}</span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex items-center gap-3">
+                                {rank.userImage ? (
+                                  <Image src={rank.userImage} alt="" width={36} height={36} className="rounded-full" />
+                                ) : (
+                                  <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                                    {rank.userName?.[0]?.toUpperCase() || "U"}
+                                  </div>
+                                )}
+                                <div>
+                                  <span className="font-medium text-text-primary">{rank.userName}</span>
+                                  <p className="text-xs text-text-tertiary">{rank.userEmail}</p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-right font-bold text-primary">{rank.totalDistance.toFixed(3)} km</td>
+                            <td className="px-4 py-3 text-right text-sm font-mono text-text-secondary">{formatDuration(rank.totalDuration)}</td>
+                            <td className="px-4 py-3 text-center text-sm text-text-secondary">{rank.totalRuns}회</td>
+                            <td className="px-4 py-3 text-center">
+                              <ChevronRight className="w-4 h-4 text-text-tertiary inline-block" />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
                 )}
               </Card>
             </div>

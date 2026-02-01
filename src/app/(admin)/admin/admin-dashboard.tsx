@@ -36,6 +36,8 @@ import {
   Medal,
   Download,
   Check,
+  Gauge,
+  RefreshCw,
 } from "lucide-react";
 
 interface User {
@@ -150,6 +152,22 @@ interface Stats {
   mau: number;
 }
 
+interface PaceGroup {
+  id: string;
+  groupNumber: number;
+  name: string;
+  timeFull: number;
+  timeHalf: number;
+  time10k: number;
+  time5k: number;
+  paceFull: number;
+  paceHalf: number;
+  pace10k: number;
+  pace5k: number;
+  pace1km: number;
+  paceRecovery: number;
+}
+
 interface AdminDashboardProps {
   users: User[];
   stats: Stats;
@@ -158,10 +176,11 @@ interface AdminDashboardProps {
   events: MarathonEvent[];
   rankings: Ranking[];
   crewMembers: CrewMemberMapping[];
+  paceGroups: PaceGroup[];
   currentUserId: string;
 }
 
-type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "user-detail" | "crew-detail";
+type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "user-detail" | "crew-detail";
 
 const distancePresets = [
   { label: "5K", value: 5 },
@@ -183,6 +202,7 @@ export function AdminDashboard({
   events,
   rankings,
   crewMembers,
+  paceGroups,
   currentUserId,
 }: AdminDashboardProps) {
   const router = useRouter();
@@ -218,6 +238,27 @@ export function AdminDashboard({
   const [selectedImportIds, setSelectedImportIds] = useState<Set<string>>(new Set());
   const [isLoadingImport, setIsLoadingImport] = useState(false);
   const [isImporting, setIsImporting] = useState(false);
+
+  // Pace group management state
+  const [showPaceGroupModal, setShowPaceGroupModal] = useState(false);
+  const [editingPaceGroup, setEditingPaceGroup] = useState<PaceGroup | null>(null);
+  const [paceGroupForm, setPaceGroupForm] = useState({
+    groupNumber: 1,
+    name: "",
+    timeFull: "",
+    timeHalf: "",
+    time10k: "",
+    time5k: "",
+    paceFull: "",
+    paceHalf: "",
+    pace10k: "",
+    pace5k: "",
+    pace1km: "",
+    paceRecovery: "",
+  });
+  const [isSavingPaceGroup, setIsSavingPaceGroup] = useState(false);
+  const [deletingPaceGroupId, setDeletingPaceGroupId] = useState<string | null>(null);
+  const [isSeedingPaceGroups, setIsSeedingPaceGroups] = useState(false);
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
   const selectedCrew = crews.find((c) => c.id === selectedCrewId);
@@ -488,6 +529,163 @@ export function AdminDashboard({
     }));
   };
 
+  // Pace group handlers
+  const secondsToTimeStr = (seconds: number) => {
+    const h = Math.floor(seconds / 3600);
+    const m = Math.floor((seconds % 3600) / 60);
+    const s = seconds % 60;
+    if (h > 0) {
+      return `${h}:${m.toString().padStart(2, "0")}:${s.toString().padStart(2, "0")}`;
+    }
+    return `${m}:${s.toString().padStart(2, "0")}`;
+  };
+
+  const timeStrToSeconds = (time: string): number => {
+    const parts = time.split(":").map(Number);
+    if (parts.length === 3) {
+      return parts[0] * 3600 + parts[1] * 60 + parts[2];
+    } else if (parts.length === 2) {
+      return parts[0] * 60 + parts[1];
+    }
+    return 0;
+  };
+
+  const openPaceGroupModal = (paceGroup?: PaceGroup) => {
+    if (paceGroup) {
+      setEditingPaceGroup(paceGroup);
+      setPaceGroupForm({
+        groupNumber: paceGroup.groupNumber,
+        name: paceGroup.name,
+        timeFull: secondsToTimeStr(paceGroup.timeFull),
+        timeHalf: secondsToTimeStr(paceGroup.timeHalf),
+        time10k: secondsToTimeStr(paceGroup.time10k),
+        time5k: secondsToTimeStr(paceGroup.time5k),
+        paceFull: secondsToTimeStr(paceGroup.paceFull),
+        paceHalf: secondsToTimeStr(paceGroup.paceHalf),
+        pace10k: secondsToTimeStr(paceGroup.pace10k),
+        pace5k: secondsToTimeStr(paceGroup.pace5k),
+        pace1km: secondsToTimeStr(paceGroup.pace1km),
+        paceRecovery: secondsToTimeStr(paceGroup.paceRecovery),
+      });
+    } else {
+      setEditingPaceGroup(null);
+      const nextGroupNumber = paceGroups.length > 0
+        ? Math.max(...paceGroups.map(g => g.groupNumber)) + 1
+        : 1;
+      setPaceGroupForm({
+        groupNumber: nextGroupNumber,
+        name: `${nextGroupNumber}그룹`,
+        timeFull: "3:30:00",
+        timeHalf: "1:40:00",
+        time10k: "45:00",
+        time5k: "22:00",
+        paceFull: "5:00",
+        paceHalf: "4:45",
+        pace10k: "4:30",
+        pace5k: "4:25",
+        pace1km: "4:00",
+        paceRecovery: "5:30",
+      });
+    }
+    setShowPaceGroupModal(true);
+  };
+
+  const handleSavePaceGroup = async () => {
+    if (!paceGroupForm.name.trim()) return;
+
+    setIsSavingPaceGroup(true);
+    try {
+      const url = editingPaceGroup
+        ? `/api/admin/pace-groups/${editingPaceGroup.id}`
+        : "/api/admin/pace-groups";
+      const method = editingPaceGroup ? "PUT" : "POST";
+
+      const response = await fetch(url, {
+        method,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          groupNumber: paceGroupForm.groupNumber,
+          name: paceGroupForm.name.trim(),
+          timeFull: timeStrToSeconds(paceGroupForm.timeFull),
+          timeHalf: timeStrToSeconds(paceGroupForm.timeHalf),
+          time10k: timeStrToSeconds(paceGroupForm.time10k),
+          time5k: timeStrToSeconds(paceGroupForm.time5k),
+          paceFull: timeStrToSeconds(paceGroupForm.paceFull),
+          paceHalf: timeStrToSeconds(paceGroupForm.paceHalf),
+          pace10k: timeStrToSeconds(paceGroupForm.pace10k),
+          pace5k: timeStrToSeconds(paceGroupForm.pace5k),
+          pace1km: timeStrToSeconds(paceGroupForm.pace1km),
+          paceRecovery: timeStrToSeconds(paceGroupForm.paceRecovery),
+        }),
+      });
+
+      if (response.ok) {
+        setShowPaceGroupModal(false);
+        router.refresh();
+      } else {
+        const data = await response.json();
+        alert(data.error || "저장에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to save pace group:", error);
+      alert("저장에 실패했습니다.");
+    } finally {
+      setIsSavingPaceGroup(false);
+    }
+  };
+
+  const handleDeletePaceGroup = async (id: string) => {
+    if (!confirm("정말 이 페이스 그룹을 삭제하시겠습니까?")) return;
+
+    setDeletingPaceGroupId(id);
+    try {
+      const response = await fetch(`/api/admin/pace-groups/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        router.refresh();
+      } else {
+        const data = await response.json();
+        alert(data.error || "삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to delete pace group:", error);
+      alert("삭제에 실패했습니다.");
+    } finally {
+      setDeletingPaceGroupId(null);
+    }
+  };
+
+  const handleSeedPaceGroups = async () => {
+    if (paceGroups.length > 0) {
+      if (!confirm("기존 페이스 그룹 데이터를 모두 삭제하고 초기 데이터로 채웁니다. 계속하시겠습니까?")) {
+        return;
+      }
+    }
+
+    setIsSeedingPaceGroups(true);
+    try {
+      const response = await fetch("/api/pace-groups/seed", {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        alert(`${data.count}개의 페이스 그룹이 생성되었습니다.`);
+        router.refresh();
+      } else {
+        const data = await response.json();
+        alert(data.error || "초기화에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to seed pace groups:", error);
+      alert("초기화에 실패했습니다.");
+    } finally {
+      setIsSeedingPaceGroups(false);
+    }
+  };
+
   const formatDuration = (seconds: number) => {
     const hours = Math.floor(seconds / 3600);
     const minutes = Math.floor((seconds % 3600) / 60);
@@ -586,6 +784,7 @@ export function AdminDashboard({
     { id: "records" as View, label: "기록 관리", icon: FileText },
     { id: "crews" as View, label: "크루 관리", icon: Users2 },
     { id: "events" as View, label: "대회 관리", icon: Trophy },
+    { id: "pace-groups" as View, label: "페이스 차트", icon: Gauge },
     { id: "rankings" as View, label: "Ranking", icon: BarChart3 },
   ];
 
@@ -939,6 +1138,179 @@ export function AdminDashboard({
               >
                 {isImporting ? "가져오는 중..." : `${selectedImportIds.size}개 대회 가져오기`}
               </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Pace Group Modal */}
+      {showPaceGroupModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowPaceGroupModal(false)} />
+          <div className="relative bg-surface rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 shadow-xl">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-lg font-bold text-text-primary">
+                {editingPaceGroup ? "페이스 그룹 수정" : "새 페이스 그룹 추가"}
+              </h2>
+              <button
+                onClick={() => setShowPaceGroupModal(false)}
+                className="p-2 text-text-tertiary hover:text-text-primary rounded-lg hover:bg-surface-elevated"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium text-text-secondary">그룹 번호</label>
+                  <input
+                    type="number"
+                    value={paceGroupForm.groupNumber}
+                    onChange={(e) => setPaceGroupForm({ ...paceGroupForm, groupNumber: parseInt(e.target.value) || 1 })}
+                    className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium text-text-secondary">그룹명</label>
+                  <input
+                    type="text"
+                    value={paceGroupForm.name}
+                    onChange={(e) => setPaceGroupForm({ ...paceGroupForm, name: e.target.value })}
+                    placeholder="예: 1그룹"
+                    className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-text-primary mb-3">목표 시간 (HH:MM:SS 또는 MM:SS)</h3>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">풀마라톤</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.timeFull}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, timeFull: e.target.value })}
+                      placeholder="3:30:00"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">하프</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.timeHalf}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, timeHalf: e.target.value })}
+                      placeholder="1:40:00"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">10K</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.time10k}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, time10k: e.target.value })}
+                      placeholder="45:00"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">5K</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.time5k}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, time5k: e.target.value })}
+                      placeholder="22:00"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-border pt-4">
+                <h3 className="font-medium text-text-primary mb-3">페이스 (M:SS 형식)</h3>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">풀마라톤</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.paceFull}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, paceFull: e.target.value })}
+                      placeholder="5:00"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">하프</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.paceHalf}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, paceHalf: e.target.value })}
+                      placeholder="4:45"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">10K</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.pace10k}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, pace10k: e.target.value })}
+                      placeholder="4:30"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">5K</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.pace5k}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, pace5k: e.target.value })}
+                      placeholder="4:25"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary">1km 인터벌</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.pace1km}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, pace1km: e.target.value })}
+                      placeholder="4:00"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium text-text-secondary text-primary">Recovery</label>
+                    <input
+                      type="text"
+                      value={paceGroupForm.paceRecovery}
+                      onChange={(e) => setPaceGroupForm({ ...paceGroupForm, paceRecovery: e.target.value })}
+                      placeholder="5:30"
+                      className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <Button
+                  variant="secondary"
+                  onClick={() => setShowPaceGroupModal(false)}
+                  className="flex-1"
+                >
+                  취소
+                </Button>
+                <Button
+                  onClick={handleSavePaceGroup}
+                  disabled={!paceGroupForm.name.trim() || isSavingPaceGroup}
+                  className="flex-1"
+                >
+                  {isSavingPaceGroup ? "저장 중..." : editingPaceGroup ? "수정" : "추가"}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
@@ -1482,6 +1854,134 @@ export function AdminDashboard({
                     </div>
                   ))
                 )}
+              </Card>
+            </div>
+          )}
+
+          {/* Pace Groups View */}
+          {activeView === "pace-groups" && (
+            <div className="space-y-4">
+              <div className="flex gap-3">
+                <Button variant="secondary" onClick={handleSeedPaceGroups} disabled={isSeedingPaceGroups}>
+                  <RefreshCw className={`w-4 h-4 mr-1 ${isSeedingPaceGroups ? "animate-spin" : ""}`} />
+                  {isSeedingPaceGroups ? "초기화 중..." : "초기 데이터 설정"}
+                </Button>
+                <Button onClick={() => openPaceGroupModal()}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  추가
+                </Button>
+              </div>
+
+              {paceGroups.length === 0 ? (
+                <Card className="text-center py-12">
+                  <Gauge className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+                  <p className="text-text-secondary mb-2">페이스 그룹이 없습니다</p>
+                  <p className="text-sm text-text-tertiary">초기 데이터 설정 버튼을 눌러 10개 그룹을 생성하세요</p>
+                </Card>
+              ) : (
+                <Card className="overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[900px]">
+                      <thead>
+                        <tr className="bg-surface-elevated border-b border-border">
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary sticky left-0 bg-surface-elevated">그룹</th>
+                          <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary" colSpan={4}>목표 시간</th>
+                          <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary" colSpan={6}>페이스</th>
+                          <th className="text-center px-3 py-3 text-sm font-medium text-text-secondary">작업</th>
+                        </tr>
+                        <tr className="bg-surface-elevated/50 border-b border-border">
+                          <th className="text-left px-4 py-2 text-xs font-medium text-text-tertiary sticky left-0 bg-surface-elevated/50"></th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Full</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Half</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">10K</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">5K</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Full</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">Half</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">10K</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">5K</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary">1km</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-primary">Rec.</th>
+                          <th className="text-center px-3 py-2 text-xs font-medium text-text-tertiary"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {paceGroups.map((group, index) => (
+                          <tr
+                            key={group.id}
+                            className={`border-b border-border last:border-b-0 ${
+                              index % 2 === 0 ? "bg-surface" : "bg-surface-elevated/50"
+                            }`}
+                          >
+                            <td className="px-4 py-3 font-medium text-text-primary sticky left-0 bg-inherit">
+                              {group.name}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.timeFull)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.timeHalf)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.time10k)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.time5k)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.paceFull)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.paceHalf)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.pace10k)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.pace5k)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-text-secondary font-mono text-sm">
+                              {secondsToTimeStr(group.pace1km)}
+                            </td>
+                            <td className="px-3 py-3 text-center text-primary font-mono text-sm font-medium">
+                              {secondsToTimeStr(group.paceRecovery)}
+                            </td>
+                            <td className="px-3 py-3 text-center">
+                              <div className="flex items-center justify-center gap-1">
+                                <button
+                                  onClick={() => openPaceGroupModal(group)}
+                                  className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                                >
+                                  <Edit2 className="w-4 h-4" />
+                                </button>
+                                <button
+                                  onClick={() => handleDeletePaceGroup(group.id)}
+                                  disabled={deletingPaceGroupId === group.id}
+                                  className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
+                                >
+                                  {deletingPaceGroupId === group.id ? (
+                                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                                  ) : (
+                                    <Trash2 className="w-4 h-4" />
+                                  )}
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
+
+              <Card className="p-4">
+                <h3 className="font-medium text-text-primary mb-2">페이스 가이드</h3>
+                <ul className="text-sm text-text-secondary space-y-1">
+                  <li>• <span className="font-medium">목표 시간</span>: 각 거리별 목표 완주 시간</li>
+                  <li>• <span className="font-medium">페이스</span>: 해당 거리 레이스 권장 페이스 (분/km)</li>
+                  <li>• <span className="font-medium">1km</span>: 인터벌 훈련 페이스</li>
+                  <li>• <span className="text-primary font-medium">Recovery</span>: 회복 조깅 페이스</li>
+                </ul>
               </Card>
             </div>
           )}

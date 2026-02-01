@@ -145,6 +145,11 @@ export default async function AdminPage() {
     },
   });
 
+  // Fetch pace groups
+  const paceGroups = await prisma.paceGroup.findMany({
+    orderBy: { groupNumber: "asc" },
+  });
+
   return (
     <AdminDashboard
       users={users}
@@ -154,6 +159,7 @@ export default async function AdminPage() {
       events={events}
       rankings={rankings}
       crewMembers={crewMembers}
+      paceGroups={paceGroups}
       currentUserId={session.user.id}
     />
   );

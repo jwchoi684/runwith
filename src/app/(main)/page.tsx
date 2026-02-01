@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { Card } from "@/components/ui/card";
-import { Trophy, Clock, TrendingUp } from "lucide-react";
+import { Trophy, Clock, TrendingUp, Gauge, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 export default async function HomePage() {
@@ -89,6 +89,22 @@ export default async function HomePage() {
           label="최고 페이스"
         />
       </div>
+
+      {/* Pace Chart Link */}
+      <Link href="/pace-chart">
+        <Card className="flex items-center justify-between p-4 hover:shadow-toss-lg transition-shadow">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
+              <Gauge className="w-5 h-5 text-primary" />
+            </div>
+            <div>
+              <p className="font-medium text-text-primary">페이스 차트</p>
+              <p className="text-sm text-text-tertiary">그룹별 목표 시간 & 페이스 확인</p>
+            </div>
+          </div>
+          <ChevronRight className="w-5 h-5 text-text-tertiary" />
+        </Card>
+      </Link>
 
       {/* Recent Records */}
       <section>

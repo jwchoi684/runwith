@@ -95,6 +95,26 @@ model MarathonEvent {
   updatedAt   DateTime     @updatedAt
 }
 
+model PaceGroup {
+  id          String   @id @default(cuid())
+  groupNumber Int      @unique // 1-10
+  name        String   // "1그룹", "2그룹", etc.
+  // Target times in seconds
+  timeFull    Int      // Full marathon target time
+  timeHalf    Int      // Half marathon target time
+  time10k     Int      // 10K target time
+  time5k      Int      // 5K target time
+  // Paces in seconds per km
+  paceFull    Int      // Full marathon pace
+  paceHalf    Int      // Half marathon pace
+  pace10k     Int      // 10K pace
+  pace5k      Int      // 5K pace
+  pace1km     Int      // 1km pace
+  paceRecovery Int     // Recovery pace
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
 model Crew {
   id          String       @id @default(cuid())
   name        String

@@ -423,8 +423,16 @@ export default function EventsPage() {
 
       {/* Event Detail Modal */}
       {selectedEvent && (
-        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-[60]">
-          <div className="bg-surface w-full max-w-lg rounded-t-3xl p-6 pb-24 animate-slide-up">
+        <div
+          className="fixed inset-0 bg-black/50 flex items-end justify-center z-[60] pb-16"
+          onClick={(e) => {
+            if (e.target === e.currentTarget) {
+              setSelectedEvent(null);
+              setSelectedCourse("");
+            }
+          }}
+        >
+          <div className="bg-surface w-full max-w-lg rounded-t-3xl p-6 pb-8 animate-slide-up max-h-[80vh] overflow-y-auto">
             {/* Header */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex-1 pr-4">

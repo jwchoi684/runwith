@@ -199,38 +199,41 @@ export default function LeaderboardPage() {
             </div>
           )}
 
-          {/* Rest of leaderboard */}
+          {/* Show all entries as list when less than 3, or entries after top 3 */}
           <div className="space-y-2">
-            {leaderboard.slice(3).map((entry, index) => (
-              <Card key={entry.userId}>
-                <div className="flex items-center gap-4">
-                  <span className="w-8 text-center font-bold text-text-tertiary">
-                    {index + 4}
-                  </span>
-                  {entry.userImage ? (
-                    <Image
-                      src={entry.userImage}
-                      alt={entry.userName || "User"}
-                      width={40}
-                      height={40}
-                      className="rounded-full"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-primary font-semibold">
-                      {entry.userName?.[0]?.toUpperCase() || "U"}
+            {(leaderboard.length < 3 ? leaderboard : leaderboard.slice(3)).map((entry, index) => {
+              const rank = leaderboard.length < 3 ? index + 1 : index + 4;
+              return (
+                <Card key={entry.userId}>
+                  <div className="flex items-center gap-4">
+                    <span className={`w-8 text-center font-bold ${rank <= 3 ? "text-primary" : "text-text-tertiary"}`}>
+                      {rank}
+                    </span>
+                    {entry.userImage ? (
+                      <Image
+                        src={entry.userImage}
+                        alt={entry.userName || "User"}
+                        width={40}
+                        height={40}
+                        className="rounded-full"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-primary font-semibold">
+                        {entry.userName?.[0]?.toUpperCase() || "U"}
+                      </div>
+                    )}
+                    <div className="flex-1">
+                      <p className="font-medium text-text-primary">{entry.userName || "Unknown"}</p>
+                      <p className="text-xs text-text-tertiary">{entry.totalRuns}회</p>
                     </div>
-                  )}
-                  <div className="flex-1">
-                    <p className="font-medium text-text-primary">{entry.userName || "Unknown"}</p>
-                    <p className="text-xs text-text-tertiary">{entry.totalRuns}회</p>
+                    <div className="text-right">
+                      <p className="font-bold text-text-secondary">{formatDistance(entry.totalDistance)} km</p>
+                      <p className="text-xs text-text-tertiary">{formatPace(entry.bestPace)} /km</p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-bold text-text-secondary">{formatDistance(entry.totalDistance)} km</p>
-                    <p className="text-xs text-text-tertiary">{formatPace(entry.bestPace)} /km</p>
-                  </div>
-                </div>
-              </Card>
-            ))}
+                </Card>
+              );
+            })}
           </div>
         </>
       )}

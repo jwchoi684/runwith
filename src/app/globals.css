@@ -3,19 +3,23 @@
 /* Toss-style Design Tokens - Light Mode */
 :root {
   /* Backgrounds */
-  --background: #F4F4F4;
+  --background: #F2F4F6;
   --surface: #FFFFFF;
   --surface-elevated: #F7F8FA;
+  --surface-hover: #F0F1F3;
 
-  /* Primary */
+  /* Primary - Keep existing blue */
   --primary: #3182F6;
   --primary-dark: #1B64DA;
   --primary-light: #E8F3FF;
 
   /* Semantic */
   --success: #00C853;
+  --success-light: #E8FAF0;
   --warning: #FF9100;
+  --warning-light: #FFF4E5;
   --error: #F04452;
+  --error-light: #FFEBEE;
 
   /* Text */
   --text-primary: #191F28;
@@ -40,14 +44,18 @@
   --color-foreground: var(--foreground);
   --color-surface: var(--surface);
   --color-surface-elevated: var(--surface-elevated);
+  --color-surface-hover: var(--surface-hover);
 
   --color-primary: var(--primary);
   --color-primary-dark: var(--primary-dark);
   --color-primary-light: var(--primary-light);
 
   --color-success: var(--success);
+  --color-success-light: var(--success-light);
   --color-warning: var(--warning);
+  --color-warning-light: var(--warning-light);
   --color-error: var(--error);
+  --color-error-light: var(--error-light);
 
   --color-text-primary: var(--text-primary);
   --color-text-secondary: var(--text-secondary);
@@ -61,17 +69,18 @@
   --font-sans: var(--font-geist-sans), -apple-system, BlinkMacSystemFont, 'Noto Sans KR', sans-serif;
   --font-mono: var(--font-geist-mono);
 
-  /* Border Radius */
-  --radius-sm: 6px;
-  --radius-md: 10px;
+  /* Border Radius - Toss uses rounder corners */
+  --radius-sm: 8px;
+  --radius-md: 12px;
   --radius-lg: 16px;
-  --radius-xl: 24px;
+  --radius-xl: 20px;
+  --radius-2xl: 24px;
   --radius-full: 9999px;
 
-  /* Shadows */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 4px 16px rgba(0, 0, 0, 0.12);
+  /* Shadows - Toss uses very subtle shadows */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 /* Base Styles */
@@ -131,9 +140,183 @@ body {
 
 /* Toss-style shadows */
 .shadow-toss {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
 }
 
 .shadow-toss-lg {
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Toss-style divider */
+.divider {
+  height: 1px;
+  background: var(--border-light);
+}
+
+/* Toss-style list item */
+.list-item {
+  display: flex;
+  align-items: center;
+  padding: 16px;
+  background: var(--surface);
+  transition: background-color 0.15s ease;
+}
+
+.list-item:hover {
+  background: var(--surface-elevated);
+}
+
+.list-item:active {
+  background: var(--surface-hover);
+}
+
+/* Toss-style badge */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.badge-primary {
+  background: var(--primary-light);
+  color: var(--primary);
+}
+
+.badge-success {
+  background: var(--success-light);
+  color: var(--success);
+}
+
+.badge-warning {
+  background: var(--warning-light);
+  color: var(--warning);
+}
+
+.badge-error {
+  background: var(--error-light);
+  color: var(--error);
+}
+
+.badge-gray {
+  background: var(--surface-elevated);
+  color: var(--text-secondary);
+}
+
+/* Toss-style pill button */
+.pill-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border-radius: var(--radius-full);
+  font-size: 14px;
+  font-weight: 500;
+  background: var(--surface-elevated);
+  color: var(--text-primary);
+  transition: all 0.15s ease;
+}
+
+.pill-button:hover {
+  background: var(--border);
+}
+
+.pill-button:active {
+  transform: scale(0.97);
+}
+
+.pill-button-primary {
+  background: var(--primary);
+  color: white;
+}
+
+.pill-button-primary:hover {
+  background: var(--primary-dark);
+}
+
+/* Toss-style table */
+.toss-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.toss-table thead {
+  background: var(--surface-elevated);
+}
+
+.toss-table th {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-tertiary);
+  text-align: left;
+  border-bottom: 1px solid var(--border-light);
+}
+
+.toss-table td {
+  padding: 16px;
+  font-size: 14px;
+  color: var(--text-primary);
+  border-bottom: 1px solid var(--border-light);
+}
+
+.toss-table tbody tr {
+  transition: background-color 0.15s ease;
+}
+
+.toss-table tbody tr:hover {
+  background: var(--surface-elevated);
+}
+
+.toss-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Number formatting */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Amount styles */
+.amount-positive {
+  color: var(--primary);
+}
+
+.amount-negative {
+  color: var(--error);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s ease-out;
 }

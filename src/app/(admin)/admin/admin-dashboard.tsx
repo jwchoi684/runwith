@@ -39,6 +39,8 @@ import {
   Gauge,
   RefreshCw,
   History,
+  Upload,
+  FileSpreadsheet,
 } from "lucide-react";
 
 interface User {
@@ -275,6 +277,10 @@ export function AdminDashboard({
   const [isSavingPaceGroup, setIsSavingPaceGroup] = useState(false);
   const [deletingPaceGroupId, setDeletingPaceGroupId] = useState<string | null>(null);
   const [isSeedingPaceGroups, setIsSeedingPaceGroups] = useState(false);
+
+  // Excel upload state
+  const [isUploadingExcel, setIsUploadingExcel] = useState(false);
+  const [excelUploadResult, setExcelUploadResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
   const selectedCrew = crews.find((c) => c.id === selectedCrewId);
@@ -712,6 +718,63 @@ export function AdminDashboard({
       alert("초기화에 실패했습니다.");
     } finally {
       setIsSeedingPaceGroups(false);
+    }
+  };
+
+  // Excel upload handlers
+  const handleExcelUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingExcel(true);
+    setExcelUploadResult(null);
+
+    try {
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch("/api/admin/events/upload", {
+        method: "POST",
+        body: formData,
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        setExcelUploadResult(result);
+        if (result.success > 0) {
+          router.refresh();
+        }
+      } else {
+        alert(result.error || "업로드에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Excel upload error:", error);
+      alert("업로드 중 오류가 발생했습니다.");
+    } finally {
+      setIsUploadingExcel(false);
+      // Reset the input
+      e.target.value = "";
+    }
+  };
+
+  const handleDownloadTemplate = async () => {
+    try {
+      const response = await fetch("/api/admin/events/template");
+      if (!response.ok) throw new Error("Failed to download template");
+
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "marathon_events_template.xlsx";
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (error) {
+      console.error("Template download error:", error);
+      alert("템플릿 다운로드에 실패했습니다.");
     }
   };
 
@@ -1865,6 +1928,30 @@ export function AdminDashboard({
                     className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
+                <Button variant="secondary" onClick={handleDownloadTemplate}>
+                  <FileSpreadsheet className="w-4 h-4 mr-1" />
+                  템플릿
+                </Button>
+                <label className={`cursor-pointer inline-flex items-center justify-center gap-1.5 h-11 px-5 text-[14px] font-semibold rounded-[--radius-lg] transition-colors duration-150 ${isUploadingExcel ? "opacity-40 cursor-not-allowed" : ""} bg-surface-elevated text-text-primary hover:bg-border`}>
+                  {isUploadingExcel ? (
+                    <>
+                      <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                      업로드 중...
+                    </>
+                  ) : (
+                    <>
+                      <Upload className="w-4 h-4" />
+                      엑셀 업로드
+                    </>
+                  )}
+                  <input
+                    type="file"
+                    accept=".xlsx,.xls"
+                    onChange={handleExcelUpload}
+                    className="hidden"
+                    disabled={isUploadingExcel}
+                  />
+                </label>
                 <Button variant="secondary" onClick={() => setShowImportModal(true)}>
                   <Download className="w-4 h-4 mr-1" />
                   가져오기
@@ -1907,6 +1994,36 @@ export function AdminDashboard({
                         </>
                       )}
                     </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Excel Upload Result */}
+              {excelUploadResult && (
+                <div className={`rounded-xl px-4 py-3 ${excelUploadResult.failed > 0 ? "bg-warning/10 border border-warning/20" : "bg-success/10 border border-success/20"}`}>
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className={`font-medium ${excelUploadResult.failed > 0 ? "text-warning" : "text-success"}`}>
+                        엑셀 업로드 완료: {excelUploadResult.success}개 성공
+                        {excelUploadResult.failed > 0 && `, ${excelUploadResult.failed}개 실패`}
+                      </p>
+                      {excelUploadResult.errors.length > 0 && (
+                        <ul className="mt-1 text-sm text-text-secondary">
+                          {excelUploadResult.errors.slice(0, 3).map((error, i) => (
+                            <li key={i}>• {error}</li>
+                          ))}
+                          {excelUploadResult.errors.length > 3 && (
+                            <li>... 외 {excelUploadResult.errors.length - 3}개 오류</li>
+                          )}
+                        </ul>
+                      )}
+                    </div>
+                    <button
+                      onClick={() => setExcelUploadResult(null)}
+                      className="text-text-tertiary hover:text-text-primary p-1"
+                    >
+                      <X className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               )}

@@ -98,7 +98,8 @@ export default function OnboardingPage() {
 
       if (response.ok) {
         await update({ name: name.trim() });
-        router.push("/");
+        // 첫 가입 시 크루 가입 페이지로 이동
+        router.push("/crews?tab=discover");
         router.refresh();
       } else {
         const data = await response.json();

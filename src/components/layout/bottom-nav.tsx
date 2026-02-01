@@ -1,6 +1,6 @@
 "use client";
 
-import { Home, Trophy, Users, Medal, User } from "lucide-react";
+import { Home, Trophy, Calendar, Medal, User } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion } from "framer-motion";
@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 const navItems = [
   { href: "/", icon: Home, label: "홈" },
   { href: "/records", icon: Trophy, label: "기록" },
-  { href: "/crews", icon: Users, label: "크루" },
+  { href: "/events", icon: Calendar, label: "대회" },
   { href: "/leaderboard", icon: Medal, label: "리더보드" },
   { href: "/profile", icon: User, label: "프로필" },
 ];

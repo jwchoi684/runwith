@@ -12,6 +12,8 @@ import {
   Flame,
   ChevronRight,
   Shield,
+  Users,
+  Plus,
 } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
@@ -134,8 +136,37 @@ export default async function ProfilePage() {
         </div>
       </section>
 
+      {/* Crew Section */}
+      <section>
+        <h3 className="text-lg font-semibold text-text-primary mb-3">크루</h3>
+        <div className="space-y-1">
+          <Link href="/crews">
+            <div className="w-full flex items-center justify-between p-4 rounded-[--radius-lg] hover:bg-surface-elevated transition-colors duration-200">
+              <div className="flex items-center gap-3">
+                <span className="text-text-tertiary"><Users className="w-5 h-5" /></span>
+                <span className="font-medium text-text-primary">내 크루</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm text-text-tertiary">{crewsCount}개</span>
+                <ChevronRight className="w-5 h-5 text-text-tertiary" />
+              </div>
+            </div>
+          </Link>
+          <Link href="/crews/new">
+            <div className="w-full flex items-center justify-between p-4 rounded-[--radius-lg] hover:bg-surface-elevated transition-colors duration-200">
+              <div className="flex items-center gap-3">
+                <span className="text-text-tertiary"><Plus className="w-5 h-5" /></span>
+                <span className="font-medium text-text-primary">크루 만들기</span>
+              </div>
+              <ChevronRight className="w-5 h-5 text-text-tertiary" />
+            </div>
+          </Link>
+        </div>
+      </section>
+
       {/* Settings Menu */}
       <section>
+        <h3 className="text-lg font-semibold text-text-primary mb-3">설정</h3>
         <div className="space-y-1">
           {isAdmin && (
             <Link href="/admin">

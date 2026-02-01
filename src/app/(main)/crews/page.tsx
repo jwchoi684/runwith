@@ -4,9 +4,9 @@ import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { SwipeableItem } from "@/components/ui/swipeable-item";
-import { Plus, Users, Search, UserPlus } from "lucide-react";
+import { Users, Search, UserPlus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 
 interface Crew {
   id: string;
@@ -17,10 +17,13 @@ interface Crew {
 
 export default function CrewsPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get("tab") === "discover" ? "discover" : "my";
+
   const [myCrews, setMyCrews] = useState<Crew[]>([]);
   const [discoverCrews, setDiscoverCrews] = useState<Crew[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeTab, setActiveTab] = useState<"my" | "discover">("my");
+  const [activeTab, setActiveTab] = useState<"my" | "discover">(initialTab);
   const [isLoading, setIsLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [leavingId, setLeavingId] = useState<string | null>(null);
@@ -122,14 +125,13 @@ export default function CrewsPage() {
   return (
     <div className="p-4 space-y-4">
       {/* Header */}
-      <header className="flex items-center justify-between pt-2">
-        <h1 className="text-2xl font-bold text-text-primary">크루</h1>
-        <Link href="/crews/new">
-          <Button size="sm">
-            <Plus className="w-4 h-4 mr-1" />
-            만들기
+      <header className="flex items-center gap-3 pt-2">
+        <Link href="/profile">
+          <Button variant="ghost" size="sm">
+            <ArrowLeft className="w-5 h-5" />
           </Button>
         </Link>
+        <h1 className="text-2xl font-bold text-text-primary">크루</h1>
       </header>
 
       {/* Search */}

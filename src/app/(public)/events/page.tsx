@@ -366,20 +366,24 @@ export default function EventsPage() {
           </h1>
           {/* Year Selector */}
           {availableYears.length > 1 && (
-            <select
-              value={selectedYear}
-              onChange={(e) => {
-                setSelectedYear(parseInt(e.target.value, 10));
-                setSelectedMonth(null);
-              }}
-              className="bg-surface-elevated text-text-primary px-3 py-1.5 rounded-lg text-sm font-medium border border-border focus:outline-none focus:ring-2 focus:ring-primary"
-            >
+            <div className="flex gap-1">
               {availableYears.map((year) => (
-                <option key={year} value={year}>
-                  {year}년
-                </option>
+                <button
+                  key={year}
+                  onClick={() => {
+                    setSelectedYear(year);
+                    setSelectedMonth(null);
+                  }}
+                  className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    selectedYear === year
+                      ? "bg-primary text-white"
+                      : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+                  }`}
+                >
+                  {year}
+                </button>
               ))}
-            </select>
+            </div>
           )}
         </div>
         <p className="text-sm text-text-tertiary mt-1">

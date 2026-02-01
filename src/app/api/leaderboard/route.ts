@@ -67,6 +67,11 @@ export async function GET(request: NextRequest) {
       select: { userId: true },
     });
     userIds = crewMembers.map((m) => m.userId);
+
+    // If crew has no members, return empty leaderboard
+    if (userIds.length === 0) {
+      return NextResponse.json([]);
+    }
   }
 
   // Build where clause
@@ -76,7 +81,8 @@ export async function GET(request: NextRequest) {
     distance?: { gte?: number; lte?: number };
   } = {};
 
-  if (userIds) {
+  // Only apply userId filter if we have specific user IDs
+  if (userIds && userIds.length > 0) {
     whereClause.userId = { in: userIds };
   }
 

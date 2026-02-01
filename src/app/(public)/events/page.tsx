@@ -47,8 +47,6 @@ export default function EventsPage() {
   const [activeTab, setActiveTab] = useState<"all" | "my">("all");
   const [showPast, setShowPast] = useState(false);
 
-  const currentYear = new Date().getFullYear();
-
   useEffect(() => {
     fetchData();
   }, []);
@@ -151,27 +149,27 @@ export default function EventsPage() {
     return d;
   }, []);
 
-  // 예정 대회 (오늘 이후)
+  // 예정 대회 (오늘 이후) - 연도 필터 없이 모든 미래 대회 표시
   const upcomingEvents = useMemo(() => {
     return events
       .filter((event) => {
         if (!event.date) return false;
         const eventDate = new Date(event.date);
-        return eventDate >= today && eventDate.getFullYear() === currentYear;
+        return eventDate >= today;
       })
       .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime());
-  }, [events, currentYear, today]);
+  }, [events, today]);
 
-  // 지난 대회 (오늘 이전)
+  // 지난 대회 (오늘 이전) - 연도 필터 없이 모든 과거 대회 표시
   const pastEvents = useMemo(() => {
     return events
       .filter((event) => {
         if (!event.date) return false;
         const eventDate = new Date(event.date);
-        return eventDate < today && eventDate.getFullYear() === currentYear;
+        return eventDate < today;
       })
       .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime()); // 최신순
-  }, [events, currentYear, today]);
+  }, [events, today]);
 
   // 현재 표시할 대회 목록
   const displayEvents = useMemo(() => {
@@ -372,7 +370,7 @@ export default function EventsPage() {
       {/* Header */}
       <header className="pt-2">
         <h1 className="text-2xl font-bold text-text-primary">
-          {currentYear}년 대회 일정
+          대회 일정
         </h1>
         <p className="text-sm text-text-tertiary mt-1">
           {showPast ? "지난 마라톤 대회" : "앞으로 있는 마라톤 대회"}

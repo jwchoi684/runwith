@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { SwipeableItem } from "@/components/ui/swipeable-item";
 import { Plus, Users, Search, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,6 +23,7 @@ export default function CrewsPage() {
   const [activeTab, setActiveTab] = useState<"my" | "discover">("my");
   const [isLoading, setIsLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
+  const [leavingId, setLeavingId] = useState<string | null>(null);
 
   useEffect(() => {
     fetchCrews();
@@ -70,6 +72,36 @@ export default function CrewsPage() {
       console.error("Failed to join crew:", error);
     } finally {
       setJoiningId(null);
+    }
+  };
+
+  const handleLeaveCrew = async (crewId: string) => {
+    if (!confirm("이 크루에서 나가시겠습니까?")) return;
+
+    setLeavingId(crewId);
+    try {
+      const response = await fetch(`/api/crews/${crewId}/members`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // Remove from my crews
+        const leftCrew = myCrews.find((c) => c.id === crewId);
+        setMyCrews((prev) => prev.filter((c) => c.id !== crewId));
+        // Add to discover crews if public
+        if (leftCrew) {
+          setDiscoverCrews((prev) => [leftCrew, ...prev]);
+        }
+        router.refresh();
+      } else {
+        const data = await response.json();
+        alert(data.error || "크루 나가기에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to leave crew:", error);
+      alert("크루 나가기에 실패했습니다.");
+    } finally {
+      setLeavingId(null);
     }
   };
 
@@ -164,31 +196,52 @@ export default function CrewsPage() {
         </Card>
       ) : (
         <div className="space-y-3">
-          {currentCrews.map((crew) => (
-            <Link key={crew.id} href={`/crews/${crew.id}`}>
-              <Card variant="interactive">
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`w-14 h-14 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 ${
-                      activeTab === "my"
-                        ? "bg-primary text-white"
-                        : "bg-surface-elevated text-text-secondary"
-                    }`}
-                  >
-                    {crew.name.charAt(0)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold text-text-primary">{crew.name}</h3>
-                    <p className="text-sm text-text-tertiary">
-                      👥 {crew._count.members}명
-                    </p>
-                    {crew.description && (
-                      <p className="text-sm text-text-secondary mt-1 line-clamp-1">
-                        {crew.description}
+          {currentCrews.map((crew) =>
+            activeTab === "my" ? (
+              <SwipeableItem
+                key={crew.id}
+                onDelete={() => handleLeaveCrew(crew.id)}
+                onClick={() => router.push(`/crews/${crew.id}`)}
+                deleteLabel="나가기"
+                isDeleting={leavingId === crew.id}
+              >
+                <Card variant="interactive" className="rounded-none">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 bg-primary text-white">
+                      {crew.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-text-primary">{crew.name}</h3>
+                      <p className="text-sm text-text-tertiary">
+                        👥 {crew._count.members}명
                       </p>
-                    )}
+                      {crew.description && (
+                        <p className="text-sm text-text-secondary mt-1 line-clamp-1">
+                          {crew.description}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                  {activeTab === "discover" && (
+                </Card>
+              </SwipeableItem>
+            ) : (
+              <Link key={crew.id} href={`/crews/${crew.id}`}>
+                <Card variant="interactive">
+                  <div className="flex items-center gap-4">
+                    <div className="w-14 h-14 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 bg-surface-elevated text-text-secondary">
+                      {crew.name.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-text-primary">{crew.name}</h3>
+                      <p className="text-sm text-text-tertiary">
+                        👥 {crew._count.members}명
+                      </p>
+                      {crew.description && (
+                        <p className="text-sm text-text-secondary mt-1 line-clamp-1">
+                          {crew.description}
+                        </p>
+                      )}
+                    </div>
                     <Button
                       size="sm"
                       onClick={(e) => handleJoin(crew.id, e)}
@@ -203,11 +256,11 @@ export default function CrewsPage() {
                         </>
                       )}
                     </Button>
-                  )}
-                </div>
-              </Card>
-            </Link>
-          ))}
+                  </div>
+                </Card>
+              </Link>
+            )
+          )}
         </div>
       )}
     </div>

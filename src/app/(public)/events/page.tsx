@@ -167,12 +167,18 @@ export default function EventsPage() {
       });
   }, [userEvents]);
 
-  // 월별로 대회가 있는 월 목록
-  const availableMonths = useMemo(() => {
-    const months = new Set(
-      upcomingEvents.map((e) => new Date(e.date!).getMonth() + 1)
-    );
-    return Array.from(months).sort((a, b) => a - b);
+  // 1월부터 12월까지 모든 월 목록
+  const allMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+  // 월별 대회 수 계산
+  const eventCountByMonth = useMemo(() => {
+    const counts: Record<number, number> = {};
+    allMonths.forEach((m) => (counts[m] = 0));
+    upcomingEvents.forEach((e) => {
+      const month = new Date(e.date!).getMonth() + 1;
+      counts[month] = (counts[month] || 0) + 1;
+    });
+    return counts;
   }, [upcomingEvents]);
 
   // 월별 필터링된 대회
@@ -388,10 +394,8 @@ export default function EventsPage() {
             >
               전체 ({upcomingEvents.length})
             </button>
-            {availableMonths.map((month) => {
-              const count = upcomingEvents.filter(
-                (e) => new Date(e.date!).getMonth() + 1 === month
-              ).length;
+            {allMonths.map((month) => {
+              const count = eventCountByMonth[month] || 0;
               return (
                 <button
                   key={month}
@@ -399,10 +403,12 @@ export default function EventsPage() {
                   className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
                     selectedMonth === month
                       ? "bg-primary text-white"
-                      : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+                      : count === 0
+                        ? "bg-surface-elevated text-text-tertiary"
+                        : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
                   }`}
                 >
-                  {month}월 ({count})
+                  {month}월 {count > 0 && `(${count})`}
                 </button>
               );
             })}

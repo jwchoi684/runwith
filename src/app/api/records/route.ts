@@ -29,14 +29,17 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { date, distance, duration, notes, weather, feeling } = body;
 
+  // Parse distance with 3 decimal precision
+  const distanceValue = Math.round(parseFloat(distance) * 1000) / 1000;
+
   // Calculate pace (minutes per km)
-  const pace = duration > 0 && distance > 0 ? duration / 60 / distance : null;
+  const pace = duration > 0 && distanceValue > 0 ? duration / 60 / distanceValue : null;
 
   const record = await prisma.runningLog.create({
     data: {
       userId: session.user.id,
       date: new Date(date),
-      distance: parseFloat(distance),
+      distance: distanceValue,
       duration: parseInt(duration),
       pace,
       notes,

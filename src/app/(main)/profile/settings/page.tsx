@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,11 +12,30 @@ import {
   Globe,
   Trash2,
   LogOut,
+  User,
+  Pencil,
+  Check,
+  X,
 } from "lucide-react";
 import Link from "next/link";
 import { signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+
+interface UserProfile {
+  id: string;
+  name: string | null;
+  email: string | null;
+  image: string | null;
+}
 
 export default function SettingsPage() {
+  const router = useRouter();
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newName, setNewName] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
+
   const [notifications, setNotifications] = useState({
     crewActivity: true,
     newRecords: true,
@@ -27,6 +46,62 @@ export default function SettingsPage() {
     publicProfile: true,
     showRecords: true,
   });
+
+  useEffect(() => {
+    fetchProfile();
+  }, []);
+
+  const fetchProfile = async () => {
+    try {
+      const response = await fetch("/api/user/profile");
+      if (response.ok) {
+        const data = await response.json();
+        setProfile(data);
+        setNewName(data.name || "");
+      }
+    } catch (error) {
+      console.error("Failed to fetch profile:", error);
+    }
+  };
+
+  const handleSaveName = async () => {
+    if (!newName.trim()) {
+      setError("이름을 입력해주세요");
+      return;
+    }
+
+    setIsSaving(true);
+    setError("");
+
+    try {
+      const response = await fetch("/api/user/profile", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName.trim() }),
+      });
+
+      if (response.ok) {
+        const updatedProfile = await response.json();
+        setProfile(updatedProfile);
+        setIsEditingName(false);
+        router.refresh();
+      } else {
+        const data = await response.json();
+        setError(data.error || "저장에 실패했습니다");
+      }
+    } catch (error) {
+      console.error("Failed to save name:", error);
+      setError("저장에 실패했습니다");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setNewName(profile?.name || "");
+    setIsEditingName(false);
+    setError("");
+  };
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/login" });
@@ -43,6 +118,77 @@ export default function SettingsPage() {
         </Link>
         <h1 className="text-xl font-bold text-text-primary">설정</h1>
       </header>
+
+      {/* Profile Section */}
+      <section>
+        <h2 className="text-sm font-medium text-text-tertiary mb-3 px-1">프로필</h2>
+        <Card className="divide-y divide-border">
+          <div className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <span className="text-text-tertiary">
+                  <User className="w-5 h-5" />
+                </span>
+                <div className="flex-1">
+                  <p className="text-xs text-text-tertiary mb-1">이름</p>
+                  {isEditingName ? (
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="text"
+                        value={newName}
+                        onChange={(e) => setNewName(e.target.value)}
+                        className="flex-1 bg-surface-elevated border border-border rounded-lg px-3 py-2 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                        placeholder="이름 입력"
+                        autoFocus
+                        maxLength={50}
+                      />
+                      <button
+                        onClick={handleSaveName}
+                        disabled={isSaving}
+                        className="p-2 text-success hover:bg-surface-elevated rounded-lg transition-colors disabled:opacity-50"
+                      >
+                        <Check className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={handleCancelEdit}
+                        className="p-2 text-text-tertiary hover:bg-surface-elevated rounded-lg transition-colors"
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <p className="font-medium text-text-primary">
+                      {profile?.name || "이름 없음"}
+                    </p>
+                  )}
+                  {error && (
+                    <p className="text-xs text-error mt-1">{error}</p>
+                  )}
+                </div>
+              </div>
+              {!isEditingName && (
+                <button
+                  onClick={() => setIsEditingName(true)}
+                  className="p-2 text-text-tertiary hover:bg-surface-elevated rounded-lg transition-colors"
+                >
+                  <Pencil className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </div>
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <span className="text-text-tertiary">@</span>
+              <div>
+                <p className="text-xs text-text-tertiary mb-1">이메일</p>
+                <p className="font-medium text-text-primary">
+                  {profile?.email || "-"}
+                </p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      </section>
 
       {/* Notifications */}
       <section>
@@ -141,7 +287,6 @@ export default function SettingsPage() {
       {/* App Info */}
       <div className="text-center pt-4 pb-8">
         <p className="text-text-tertiary text-sm">Running Crew v1.0.0</p>
-        <p className="text-text-tertiary text-xs mt-1">Made with ❤️ for runners</p>
       </div>
     </div>
   );

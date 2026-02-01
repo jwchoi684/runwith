@@ -129,7 +129,7 @@ export function RecordDetail({ record }: { record: RunningLog }) {
       {/* Main Stats */}
       <Card className="text-center py-6">
         <p className="text-5xl font-bold text-primary mb-2">
-          {record.distance.toFixed(2)}
+          {record.distance.toFixed(3)}
           <span className="text-2xl text-text-secondary ml-1">km</span>
         </p>
         <p className="text-text-tertiary">{formatDate(record.date)}</p>

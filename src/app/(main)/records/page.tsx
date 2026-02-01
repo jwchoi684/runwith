@@ -73,7 +73,7 @@ export default async function RecordsPage() {
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="font-medium text-text-primary">
-                      {record.distance.toFixed(2)} km
+                      {record.distance.toFixed(3)} km
                     </p>
                     <p className="text-sm text-text-tertiary mt-0.5">
                       {formatDate(record.date)}

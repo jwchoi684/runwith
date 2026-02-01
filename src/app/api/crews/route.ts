@@ -7,6 +7,7 @@ export async function GET(request: NextRequest) {
   const session = await auth();
   const { searchParams } = new URL(request.url);
   const filter = searchParams.get("filter"); // "my" for user's crews
+  const discover = searchParams.get("discover"); // "true" for discoverable crews
 
   if (filter === "my") {
     if (!session?.user?.id) {
@@ -17,6 +18,27 @@ export async function GET(request: NextRequest) {
       where: {
         members: {
           some: { userId: session.user.id },
+        },
+      },
+      include: {
+        owner: { select: { id: true, name: true, image: true } },
+        _count: { select: { members: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(crews);
+  }
+
+  // Get public crews user is NOT a member of
+  if (discover === "true" && session?.user?.id) {
+    const crews = await prisma.crew.findMany({
+      where: {
+        isPublic: true,
+        NOT: {
+          members: {
+            some: { userId: session.user.id },
+          },
         },
       },
       include: {

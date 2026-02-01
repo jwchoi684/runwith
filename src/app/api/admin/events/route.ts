@@ -26,9 +26,9 @@ export async function POST(request: NextRequest) {
   const body = await request.json();
   const { name, location, distance, courses, date, isOfficial } = body;
 
-  if (!name || !distance) {
+  if (!name) {
     return NextResponse.json(
-      { error: "Name and distance are required" },
+      { error: "Name is required" },
       { status: 400 }
     );
   }
@@ -37,7 +37,7 @@ export async function POST(request: NextRequest) {
     data: {
       name,
       location: location || null,
-      distance: parseFloat(distance),
+      distance: distance ? parseFloat(distance) : 0,
       courses: courses || null,
       date: date ? new Date(date) : null,
       isOfficial: isOfficial ?? true,

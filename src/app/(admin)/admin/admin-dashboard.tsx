@@ -182,12 +182,7 @@ interface AdminDashboardProps {
 
 type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "user-detail" | "crew-detail";
 
-const distancePresets = [
-  { label: "5K", value: 5 },
-  { label: "10K", value: 10 },
-  { label: "하프", value: 21.0975 },
-  { label: "풀마라톤", value: 42.195 },
-];
+const coursePresets = ["Full", "Half", "10K", "5K"];
 
 const providerLabels: Record<string, { label: string; color: string }> = {
   google: { label: "Google", color: "bg-blue-100 text-blue-700" },
@@ -221,8 +216,8 @@ export function AdminDashboard({
   const [eventForm, setEventForm] = useState({
     name: "",
     location: "",
-    distance: "42.195",
     courses: [] as string[],
+    customCourse: "",
     date: "",
     isOfficial: true,
   });
@@ -336,11 +331,14 @@ export function AdminDashboard({
   const openEventModal = (event?: MarathonEvent) => {
     if (event) {
       setEditingEvent(event);
+      const allCourses = event.courses ? event.courses.split(",") : [];
+      const presetCourses = allCourses.filter(c => coursePresets.includes(c));
+      const customCourses = allCourses.filter(c => !coursePresets.includes(c));
       setEventForm({
         name: event.name,
         location: event.location || "",
-        distance: event.distance.toString(),
-        courses: event.courses ? event.courses.split(",") : [],
+        courses: presetCourses,
+        customCourse: customCourses.join(", "),
         date: event.date ? new Date(event.date).toISOString().split("T")[0] : "",
         isOfficial: event.isOfficial,
       });
@@ -349,8 +347,8 @@ export function AdminDashboard({
       setEventForm({
         name: "",
         location: "",
-        distance: "42.195",
         courses: [],
+        customCourse: "",
         date: "",
         isOfficial: true,
       });
@@ -368,14 +366,21 @@ export function AdminDashboard({
         : "/api/admin/events";
       const method = editingEvent ? "PUT" : "POST";
 
+      // Combine preset courses and custom courses
+      const allCourses = [...eventForm.courses];
+      if (eventForm.customCourse.trim()) {
+        const customCourses = eventForm.customCourse.split(",").map(c => c.trim()).filter(c => c);
+        allCourses.push(...customCourses);
+      }
+
       const response = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: eventForm.name.trim(),
           location: eventForm.location.trim() || null,
-          distance: parseFloat(eventForm.distance),
-          courses: eventForm.courses.length > 0 ? eventForm.courses.join(",") : null,
+          distance: 0, // Deprecated field, keeping for schema compatibility
+          courses: allCourses.length > 0 ? allCourses.join(",") : null,
           date: eventForm.date || null,
           isOfficial: eventForm.isOfficial,
         }),
@@ -723,14 +728,6 @@ export function AdminDashboard({
     return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
-  const formatDistance = (distance: number) => {
-    if (distance === 42.195) return "풀마라톤";
-    if (distance === 21.0975) return "하프";
-    if (distance === 10) return "10K";
-    if (distance === 5) return "5K";
-    return `${distance}km`;
-  };
-
   const getProviderBadge = (accounts: { provider: string }[]) => {
     if (!accounts || accounts.length === 0) return null;
     const provider = accounts[0].provider;
@@ -928,7 +925,7 @@ export function AdminDashboard({
               <div>
                 <label className="text-sm font-medium text-text-secondary">코스 선택</label>
                 <div className="flex gap-2 mt-1">
-                  {(["Full", "Half", "10km", "5km"] as const).map((course) => (
+                  {coursePresets.map((course) => (
                     <button
                       key={course}
                       type="button"
@@ -947,23 +944,15 @@ export function AdminDashboard({
               </div>
 
               <div>
-                <label className="text-sm font-medium text-text-secondary">대표 거리</label>
-                <div className="flex gap-2 mt-1">
-                  {distancePresets.map((preset) => (
-                    <button
-                      key={preset.value}
-                      type="button"
-                      onClick={() => setEventForm({ ...eventForm, distance: preset.value.toString() })}
-                      className={`flex-1 py-2 px-2 rounded-lg border text-xs font-medium transition-all ${
-                        parseFloat(eventForm.distance) === preset.value
-                          ? "bg-primary/10 border-primary text-primary"
-                          : "bg-surface-elevated border-border text-text-secondary hover:border-text-secondary"
-                      }`}
-                    >
-                      {preset.label}
-                    </button>
-                  ))}
-                </div>
+                <label className="text-sm font-medium text-text-secondary">커스텀 코스</label>
+                <input
+                  type="text"
+                  value={eventForm.customCourse}
+                  onChange={(e) => setEventForm({ ...eventForm, customCourse: e.target.value })}
+                  placeholder="예: 32km, 100Mile, 48K/40K/34K"
+                  className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                <p className="text-xs text-text-tertiary mt-1">쉼표로 구분하여 여러 코스 입력 가능</p>
               </div>
 
               <div>
@@ -1769,8 +1758,7 @@ export function AdminDashboard({
                           </th>
                           <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회명</th>
                           <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">장소</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">거리</th>
-                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">코스</th>
+                          <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">종목</th>
                           <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
                           <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">기록</th>
                           <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">작업</th>
@@ -1807,8 +1795,7 @@ export function AdminDashboard({
                               </div>
                             </td>
                             <td className="px-4 py-3 text-sm text-text-secondary">{event.location || "-"}</td>
-                            <td className="px-4 py-3 text-center text-sm text-text-primary">{formatDistance(event.distance)}</td>
-                            <td className="px-4 py-3 text-center text-xs text-text-tertiary">{event.courses || "-"}</td>
+                            <td className="px-4 py-3 text-sm text-text-primary">{event.courses || "-"}</td>
                             <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(event.date)}</td>
                             <td className="px-4 py-3 text-center text-sm text-text-secondary">{event._count.runningLogs}</td>
                             <td className="px-4 py-3">

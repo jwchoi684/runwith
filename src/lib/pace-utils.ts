@@ -12,8 +12,8 @@ export type DistanceKey = keyof typeof DISTANCES;
 export const DISTANCE_LABELS: Record<DistanceKey, string> = {
   "5K": "5K",
   "10K": "10K",
-  Half: "하프",
-  Full: "풀마라톤",
+  Half: "Half",
+  Full: "Full",
 };
 
 // Riegel 공식으로 기록 예측

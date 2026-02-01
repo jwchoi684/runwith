@@ -21,8 +21,8 @@ interface LeaderboardEntry {
 
 const distanceFilters = [
   { label: "전체", value: "all" },
-  { label: "풀마라톤", value: "42" },
-  { label: "하프", value: "21" },
+  { label: "Full", value: "42" },
+  { label: "Half", value: "21" },
   { label: "10K", value: "10" },
   { label: "5K", value: "5" },
 ];

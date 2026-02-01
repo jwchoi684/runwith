@@ -1340,7 +1340,7 @@ export function AdminDashboard({
                 <h3 className="font-medium text-text-primary mb-3">목표 시간 (HH:MM:SS 또는 MM:SS)</h3>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-text-secondary">풀마라톤</label>
+                    <label className="text-sm font-medium text-text-secondary">Full</label>
                     <input
                       type="text"
                       value={paceGroupForm.timeFull}
@@ -1350,7 +1350,7 @@ export function AdminDashboard({
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-text-secondary">하프</label>
+                    <label className="text-sm font-medium text-text-secondary">Half</label>
                     <input
                       type="text"
                       value={paceGroupForm.timeHalf}
@@ -1386,7 +1386,7 @@ export function AdminDashboard({
                 <h3 className="font-medium text-text-primary mb-3">페이스 (M:SS 형식)</h3>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
                   <div>
-                    <label className="text-sm font-medium text-text-secondary">풀마라톤</label>
+                    <label className="text-sm font-medium text-text-secondary">Full</label>
                     <input
                       type="text"
                       value={paceGroupForm.paceFull}
@@ -1396,7 +1396,7 @@ export function AdminDashboard({
                     />
                   </div>
                   <div>
-                    <label className="text-sm font-medium text-text-secondary">하프</label>
+                    <label className="text-sm font-medium text-text-secondary">Half</label>
                     <input
                       type="text"
                       value={paceGroupForm.paceHalf}

@@ -33,8 +33,8 @@ const feelingOptions = [
 const distancePresets = [
   { label: "5K", value: "5" },
   { label: "10K", value: "10" },
-  { label: "하프", value: "21.0975" },
-  { label: "풀마라톤", value: "42.195" },
+  { label: "Half", value: "21.0975" },
+  { label: "Full", value: "42.195" },
 ];
 
 export default function NewRecordPage() {

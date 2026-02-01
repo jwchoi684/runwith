@@ -244,7 +244,7 @@ export function RacePredictor({ paceGroups }: RacePredictorProps) {
                         <span className="font-medium text-success">{nextGroup.name}</span>
                       </div>
                       <div className="text-sm text-text-tertiary">
-                        하프마라톤에서{" "}
+                        Half에서{" "}
                         <span className="text-warning font-medium">
                           {formatTime(improvementNeeded)}
                         </span>{" "}

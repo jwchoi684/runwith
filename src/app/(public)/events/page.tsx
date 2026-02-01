@@ -2,8 +2,8 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
-import { Calendar, MapPin, Trophy } from "lucide-react";
-import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Calendar, MapPin, Trophy, X, Check, Star } from "lucide-react";
 
 interface MarathonEvent {
   id: string;
@@ -15,16 +15,29 @@ interface MarathonEvent {
   isOfficial: boolean;
 }
 
+interface UserEvent {
+  id: string;
+  eventId: string;
+  course: string | null;
+  event: MarathonEvent;
+}
+
 export default function EventsPage() {
   const [events, setEvents] = useState<MarathonEvent[]>([]);
+  const [userEvents, setUserEvents] = useState<UserEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<MarathonEvent | null>(null);
+  const [selectedCourse, setSelectedCourse] = useState<string>("");
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [activeTab, setActiveTab] = useState<"all" | "my">("all");
 
   const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
 
   useEffect(() => {
     fetchEvents();
+    fetchUserEvents();
   }, []);
 
   const fetchEvents = async () => {
@@ -39,6 +52,70 @@ export default function EventsPage() {
       console.error("Failed to fetch events:", error);
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const fetchUserEvents = async () => {
+    try {
+      const response = await fetch("/api/user-events");
+      if (response.ok) {
+        const data = await response.json();
+        setUserEvents(data);
+        setIsLoggedIn(true);
+      } else if (response.status === 401) {
+        setIsLoggedIn(false);
+      }
+    } catch (error) {
+      console.error("Failed to fetch user events:", error);
+    }
+  };
+
+  const userEventIds = useMemo(() => {
+    return new Set(userEvents.map((ue) => ue.eventId));
+  }, [userEvents]);
+
+  const handleRegister = async () => {
+    if (!selectedEvent) return;
+
+    setIsRegistering(true);
+    try {
+      const response = await fetch("/api/user-events", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          eventId: selectedEvent.id,
+          course: selectedCourse || null,
+        }),
+      });
+
+      if (response.ok) {
+        const newUserEvent = await response.json();
+        setUserEvents([...userEvents, newUserEvent]);
+        setSelectedEvent(null);
+        setSelectedCourse("");
+      } else if (response.status === 401) {
+        // Redirect to login
+        window.location.href = "/login";
+      }
+    } catch (error) {
+      console.error("Failed to register:", error);
+    } finally {
+      setIsRegistering(false);
+    }
+  };
+
+  const handleUnregister = async (eventId: string) => {
+    try {
+      const response = await fetch(`/api/user-events/${eventId}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setUserEvents(userEvents.filter((ue) => ue.eventId !== eventId));
+        setSelectedEvent(null);
+      }
+    } catch (error) {
+      console.error("Failed to unregister:", error);
     }
   };
 
@@ -57,6 +134,22 @@ export default function EventsPage() {
         return new Date(a.date!).getTime() - new Date(b.date!).getTime();
       });
   }, [events, currentYear]);
+
+  // 내 대회 필터링
+  const myUpcomingEvents = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    return userEvents
+      .filter((ue) => {
+        if (!ue.event.date) return false;
+        const eventDate = new Date(ue.event.date);
+        return eventDate >= today;
+      })
+      .sort((a, b) => {
+        return new Date(a.event.date!).getTime() - new Date(b.event.date!).getTime();
+      });
+  }, [userEvents]);
 
   // 월별로 대회가 있는 월 목록
   const availableMonths = useMemo(() => {
@@ -102,6 +195,93 @@ export default function EventsPage() {
     return `${distance}km`;
   };
 
+  const getCourses = (event: MarathonEvent) => {
+    if (event.courses) {
+      return event.courses.split(",").map((c) => c.trim());
+    }
+    return [getDistanceLabel(event.distance)];
+  };
+
+  const renderEventCard = (event: MarathonEvent, userEvent?: UserEvent) => {
+    const { formatted } = formatDate(event.date!);
+    const eventDate = new Date(event.date!);
+    const isRegistered = userEventIds.has(event.id);
+
+    return (
+      <button
+        key={event.id}
+        onClick={() => {
+          setSelectedEvent(event);
+          if (userEvent?.course) {
+            setSelectedCourse(userEvent.course);
+          } else {
+            setSelectedCourse("");
+          }
+        }}
+        className="w-full text-left p-4 hover:bg-surface-elevated transition-colors"
+      >
+        <div className="flex items-start gap-3">
+          {/* Left: Circular Date Badge */}
+          <div className={`w-12 h-12 rounded-full flex flex-col items-center justify-center shrink-0 ${
+            isRegistered ? "bg-green-500/20" : "bg-primary/10"
+          }`}>
+            <span className={`text-base font-bold leading-none ${
+              isRegistered ? "text-green-500" : "text-primary"
+            }`}>
+              {eventDate.getDate()}
+            </span>
+            <span className={`text-[10px] mt-0.5 ${
+              isRegistered ? "text-green-500/70" : "text-primary/70"
+            }`}>
+              {["일", "월", "화", "수", "목", "금", "토"][eventDate.getDay()]}
+            </span>
+          </div>
+
+          {/* Right: Event Info */}
+          <div className="flex-1 min-w-0">
+            {/* Event Name */}
+            <div className="flex items-start gap-1.5">
+              {isRegistered && (
+                <Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
+              )}
+              {event.isOfficial && !isRegistered && (
+                <Trophy className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
+              )}
+              <h3 className="font-medium text-text-primary leading-snug">
+                {event.name}
+              </h3>
+            </div>
+
+            {/* Date & Location */}
+            <p className="text-sm text-text-tertiary mt-1">{formatted}</p>
+            {event.location && (
+              <p className="text-sm text-text-tertiary flex items-center gap-1 mt-0.5">
+                <MapPin className="w-3.5 h-3.5 shrink-0" />
+                <span>{event.location}</span>
+              </p>
+            )}
+
+            {/* Course Badges */}
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {getCourses(event).map((course) => (
+                <span
+                  key={course}
+                  className={`text-xs px-2 py-1 rounded-md font-medium ${
+                    userEvent?.course === course
+                      ? "bg-green-500/20 text-green-500"
+                      : "bg-surface-elevated text-text-secondary"
+                  }`}
+                >
+                  {course}
+                </span>
+              ))}
+            </div>
+          </div>
+        </div>
+      </button>
+    );
+  };
+
   return (
     <div className="p-4 space-y-4">
       {/* Header */}
@@ -114,132 +294,249 @@ export default function EventsPage() {
         </p>
       </header>
 
-      {/* Month Filter */}
-      <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-        <button
-          onClick={() => setSelectedMonth(null)}
-          className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-            selectedMonth === null
-              ? "bg-primary text-white"
-              : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
-          }`}
-        >
-          전체 ({upcomingEvents.length})
-        </button>
-        {availableMonths.map((month) => {
-          const count = upcomingEvents.filter(
-            (e) => new Date(e.date!).getMonth() + 1 === month
-          ).length;
-          return (
+      {/* Tab Navigation */}
+      {isLoggedIn && (
+        <div className="flex gap-2">
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all ${
+              activeTab === "all"
+                ? "bg-primary text-white"
+                : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+            }`}
+          >
+            전체 대회
+          </button>
+          <button
+            onClick={() => setActiveTab("my")}
+            className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all flex items-center justify-center gap-1.5 ${
+              activeTab === "my"
+                ? "bg-primary text-white"
+                : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+            }`}
+          >
+            <Star className="w-4 h-4" />
+            내 대회 ({myUpcomingEvents.length})
+          </button>
+        </div>
+      )}
+
+      {/* All Events Tab */}
+      {activeTab === "all" && (
+        <>
+          {/* Month Filter */}
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             <button
-              key={month}
-              onClick={() => setSelectedMonth(month)}
+              onClick={() => setSelectedMonth(null)}
               className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
-                selectedMonth === month
+                selectedMonth === null
                   ? "bg-primary text-white"
                   : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
               }`}
             >
-              {month}월 ({count})
+              전체 ({upcomingEvents.length})
             </button>
-          );
-        })}
-      </div>
+            {availableMonths.map((month) => {
+              const count = upcomingEvents.filter(
+                (e) => new Date(e.date!).getMonth() + 1 === month
+              ).length;
+              return (
+                <button
+                  key={month}
+                  onClick={() => setSelectedMonth(month)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium whitespace-nowrap transition-all ${
+                    selectedMonth === month
+                      ? "bg-primary text-white"
+                      : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+                  }`}
+                >
+                  {month}월 ({count})
+                </button>
+              );
+            })}
+          </div>
 
-      {/* Event List */}
-      {isLoading ? (
-        <div className="text-center py-12">
-          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
-          <p className="text-text-tertiary mt-3">불러오는 중...</p>
-        </div>
-      ) : filteredEvents.length === 0 ? (
-        <Card className="text-center py-12">
-          <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
-          <p className="text-text-secondary">
-            {selectedMonth
-              ? `${selectedMonth}월에 예정된 대회가 없습니다`
-              : "올해 예정된 대회가 없습니다"}
-          </p>
-        </Card>
-      ) : (
-        <div className="space-y-6">
-          {Object.entries(groupedEvents).map(([month, monthEvents]) => (
-            <section key={month}>
-              <h2 className="text-lg font-semibold text-text-primary mb-3">
-                {month}월
-              </h2>
-              <div className="bg-surface rounded-2xl overflow-hidden divide-y divide-border">
-                {monthEvents.map((event) => {
-                  const { formatted } = formatDate(event.date!);
-                  const eventDate = new Date(event.date!);
-                  return (
-                    <Link
-                      key={event.id}
-                      href={`/records/new?eventId=${event.id}`}
-                      className="block p-4 hover:bg-surface-elevated transition-colors"
-                    >
-                      {/* Top Row: Date Badge + Event Name */}
-                      <div className="flex items-start gap-3">
-                        {/* Left: Circular Date Badge */}
-                        <div className="w-12 h-12 rounded-full bg-primary/10 flex flex-col items-center justify-center shrink-0">
-                          <span className="text-base font-bold text-primary leading-none">
-                            {eventDate.getDate()}
-                          </span>
-                          <span className="text-[10px] text-primary/70 mt-0.5">
-                            {["일", "월", "화", "수", "목", "금", "토"][eventDate.getDay()]}
-                          </span>
-                        </div>
+          {/* Event List */}
+          {isLoading ? (
+            <div className="text-center py-12">
+              <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
+              <p className="text-text-tertiary mt-3">불러오는 중...</p>
+            </div>
+          ) : filteredEvents.length === 0 ? (
+            <Card className="text-center py-12">
+              <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+              <p className="text-text-secondary">
+                {selectedMonth
+                  ? `${selectedMonth}월에 예정된 대회가 없습니다`
+                  : "올해 예정된 대회가 없습니다"}
+              </p>
+            </Card>
+          ) : (
+            <div className="space-y-6">
+              {Object.entries(groupedEvents).map(([month, monthEvents]) => (
+                <section key={month}>
+                  <h2 className="text-lg font-semibold text-text-primary mb-3">
+                    {month}월
+                  </h2>
+                  <div className="bg-surface rounded-2xl overflow-hidden divide-y divide-border">
+                    {monthEvents.map((event) => {
+                      const userEvent = userEvents.find((ue) => ue.eventId === event.id);
+                      return renderEventCard(event, userEvent);
+                    })}
+                  </div>
+                </section>
+              ))}
+            </div>
+          )}
+        </>
+      )}
 
-                        {/* Right: Event Info */}
-                        <div className="flex-1 min-w-0">
-                          {/* Event Name */}
-                          <div className="flex items-start gap-1.5">
-                            {event.isOfficial && (
-                              <Trophy className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
-                            )}
-                            <h3 className="font-medium text-text-primary leading-snug">
-                              {event.name}
-                            </h3>
-                          </div>
+      {/* My Events Tab */}
+      {activeTab === "my" && (
+        <>
+          {myUpcomingEvents.length === 0 ? (
+            <Card className="text-center py-12">
+              <Star className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+              <p className="text-text-secondary">참가 확정한 대회가 없습니다</p>
+              <p className="text-sm text-text-tertiary mt-1">
+                전체 대회에서 참가할 대회를 선택하세요
+              </p>
+            </Card>
+          ) : (
+            <div className="bg-surface rounded-2xl overflow-hidden divide-y divide-border">
+              {myUpcomingEvents.map((userEvent) =>
+                renderEventCard(userEvent.event, userEvent)
+              )}
+            </div>
+          )}
+        </>
+      )}
 
-                          {/* Date & Location */}
-                          <p className="text-sm text-text-tertiary mt-1">
-                            {formatted}
-                          </p>
-                          {event.location && (
-                            <p className="text-sm text-text-tertiary flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3.5 h-3.5 shrink-0" />
-                              <span>{event.location}</span>
-                            </p>
-                          )}
-
-                          {/* Course Badges */}
-                          <div className="flex flex-wrap gap-1.5 mt-2">
-                            {event.courses ? (
-                              event.courses.split(",").map((course) => (
-                                <span
-                                  key={course}
-                                  className="text-xs px-2 py-1 bg-surface-elevated rounded-md text-text-secondary font-medium"
-                                >
-                                  {course.trim()}
-                                </span>
-                              ))
-                            ) : (
-                              <span className="text-xs px-2 py-1 bg-surface-elevated rounded-md text-text-secondary font-medium">
-                                {getDistanceLabel(event.distance)}
-                              </span>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </Link>
-                  );
-                })}
+      {/* Event Detail Modal */}
+      {selectedEvent && (
+        <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
+          <div className="bg-surface w-full max-w-lg rounded-t-3xl p-6 pb-8 animate-slide-up">
+            <div className="flex items-start justify-between mb-4">
+              <div className="flex-1">
+                <div className="flex items-center gap-2">
+                  {selectedEvent.isOfficial && (
+                    <Trophy className="w-5 h-5 text-yellow-500" />
+                  )}
+                  <h2 className="text-xl font-bold text-text-primary">
+                    {selectedEvent.name}
+                  </h2>
+                </div>
+                {selectedEvent.date && (
+                  <p className="text-text-secondary mt-1">
+                    {new Date(selectedEvent.date).toLocaleDateString("ko-KR", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                      weekday: "long",
+                    })}
+                  </p>
+                )}
+                {selectedEvent.location && (
+                  <p className="text-text-tertiary flex items-center gap-1 mt-1">
+                    <MapPin className="w-4 h-4" />
+                    {selectedEvent.location}
+                  </p>
+                )}
               </div>
-            </section>
-          ))}
+              <button
+                onClick={() => {
+                  setSelectedEvent(null);
+                  setSelectedCourse("");
+                }}
+                className="text-text-tertiary hover:text-text-primary p-1"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Course Selection */}
+            <div className="mb-6">
+              <p className="text-sm font-medium text-text-secondary mb-2">
+                참가 종목 선택
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {getCourses(selectedEvent).map((course) => (
+                  <button
+                    key={course}
+                    onClick={() => setSelectedCourse(course)}
+                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      selectedCourse === course
+                        ? "bg-primary text-white"
+                        : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+                    }`}
+                  >
+                    {course}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            {userEventIds.has(selectedEvent.id) ? (
+              <div className="space-y-3">
+                <div className="flex items-center justify-center gap-2 py-3 bg-green-500/10 rounded-xl">
+                  <Check className="w-5 h-5 text-green-500" />
+                  <span className="font-medium text-green-500">참가 확정됨</span>
+                </div>
+                <div className="flex gap-3">
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleUnregister(selectedEvent.id)}
+                    className="flex-1 text-red-500 hover:bg-red-500/10"
+                  >
+                    참가 취소
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      window.location.href = `/records/new?eventId=${selectedEvent.id}`;
+                    }}
+                    className="flex-1"
+                  >
+                    기록 추가
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <Button
+                onClick={handleRegister}
+                disabled={isRegistering || !selectedCourse}
+                className="w-full"
+              >
+                {isRegistering ? "등록 중..." : "참가 확정"}
+              </Button>
+            )}
+
+            {!isLoggedIn && (
+              <p className="text-sm text-text-tertiary text-center mt-3">
+                참가 확정하려면{" "}
+                <a href="/login" className="text-primary underline">
+                  로그인
+                </a>
+                이 필요합니다
+              </p>
+            )}
+          </div>
         </div>
       )}
+
+      <style jsx>{`
+        @keyframes slide-up {
+          from {
+            transform: translateY(100%);
+          }
+          to {
+            transform: translateY(0);
+          }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.3s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

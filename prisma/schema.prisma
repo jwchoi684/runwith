@@ -52,6 +52,7 @@ model User {
   crews         CrewMember[]
   ownedCrews    Crew[]
   accessLogs    AccessLog[]
+  userEvents    UserEvent[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -93,8 +94,23 @@ model MarathonEvent {
   isOfficial  Boolean      @default(true)
   externalId  String?      // external source ID (for deduplication)
   runningLogs RunningLog[]
+  userEvents  UserEvent[]
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+}
+
+model UserEvent {
+  id        String        @id @default(cuid())
+  userId    String
+  eventId   String
+  course    String?       // 참가 종목 (e.g., "Full", "Half", "10K")
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  event     MarathonEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  createdAt DateTime      @default(now())
+
+  @@unique([userId, eventId])
+  @@index([userId])
+  @@index([eventId])
 }
 
 model PaceGroup {

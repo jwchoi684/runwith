@@ -19,6 +19,20 @@ export async function POST(request: NextRequest, { params }: { params: Params })
     return NextResponse.json({ error: "Crew not found" }, { status: 404 });
   }
 
+  // Verify password if set
+  if (crew.password) {
+    try {
+      const body = await request.json();
+      const { password } = body;
+
+      if (!password || password !== crew.password) {
+        return NextResponse.json({ error: "비밀번호가 일치하지 않습니다" }, { status: 403 });
+      }
+    } catch {
+      return NextResponse.json({ error: "비밀번호가 필요합니다" }, { status: 403 });
+    }
+  }
+
   // Check if already a member
   const existingMember = await prisma.crewMember.findUnique({
     where: {

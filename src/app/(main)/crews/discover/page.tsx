@@ -4,13 +4,14 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Search, Users, UserPlus } from "lucide-react";
+import { ArrowLeft, Search, Users, UserPlus, Key } from "lucide-react";
 import Link from "next/link";
 
 interface Crew {
   id: string;
   name: string;
   description: string | null;
+  password: string | null;
   _count: { members: number };
 }
 
@@ -39,15 +40,23 @@ export default function DiscoverCrewsPage() {
     }
   };
 
-  const handleJoin = async (crewId: string) => {
-    setJoiningId(crewId);
+  const handleJoin = async (crew: Crew) => {
+    // If crew has password, redirect to detail page where password modal will appear
+    if (crew.password) {
+      router.push(`/crews/${crew.id}`);
+      return;
+    }
+
+    setJoiningId(crew.id);
     try {
-      const response = await fetch(`/api/crews/${crewId}/members`, {
+      const response = await fetch(`/api/crews/${crew.id}/members`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
       });
 
       if (response.ok) {
-        router.push(`/crews/${crewId}`);
+        router.push(`/crews/${crew.id}`);
         router.refresh();
       }
     } catch (error) {
@@ -112,7 +121,12 @@ export default function DiscoverCrewsPage() {
                 {crew.name.charAt(0)}
               </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-semibold text-text-primary">{crew.name}</h3>
+                <div className="flex items-center gap-2">
+                  <h3 className="font-semibold text-text-primary">{crew.name}</h3>
+                  {crew.password && (
+                    <Key className="w-3.5 h-3.5 text-text-tertiary" />
+                  )}
+                </div>
                 <p className="text-sm text-text-tertiary">
                   <Users className="w-3.5 h-3.5 inline mr-1" />
                   {crew._count.members}명
@@ -125,7 +139,7 @@ export default function DiscoverCrewsPage() {
               </div>
               <Button
                 size="sm"
-                onClick={() => handleJoin(crew.id)}
+                onClick={() => handleJoin(crew)}
                 disabled={joiningId === crew.id}
               >
                 {joiningId === crew.id ? (

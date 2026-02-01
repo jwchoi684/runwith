@@ -4,16 +4,18 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Globe, Lock } from "lucide-react";
+import { ArrowLeft, Globe, Lock, Key, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 
 export default function NewCrewPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
     description: "",
     isPublic: true,
+    password: "",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -90,7 +92,10 @@ export default function NewCrewPage() {
         {/* Visibility */}
         <Card>
           <span className="text-sm font-medium text-text-secondary">공개 설정</span>
-          <div className="flex gap-3 mt-3">
+          <p className="text-xs text-text-tertiary mt-1 mb-3">
+            공개 크루는 검색에 노출됩니다
+          </p>
+          <div className="flex gap-3">
             <button
               type="button"
               onClick={() => setFormData({ ...formData, isPublic: true })}
@@ -112,9 +117,6 @@ export default function NewCrewPage() {
                   }`}
                 >
                   공개
-                </p>
-                <p className="text-xs text-text-tertiary">
-                  누구나 가입 가능
                 </p>
               </div>
             </button>
@@ -140,12 +142,39 @@ export default function NewCrewPage() {
                 >
                   비공개
                 </p>
-                <p className="text-xs text-text-tertiary">
-                  초대로만 가입
-                </p>
               </div>
             </button>
           </div>
+        </Card>
+
+        {/* Password */}
+        <Card>
+          <label className="block">
+            <span className="text-sm font-medium text-text-secondary">가입 비밀번호</span>
+            <p className="text-xs text-text-tertiary mt-1 mb-2">
+              비밀번호를 설정하면 가입 시 비밀번호를 입력해야 합니다
+            </p>
+            <div className="relative">
+              <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+              <input
+                type={showPassword ? "text" : "password"}
+                value={formData.password}
+                onChange={(e) =>
+                  setFormData({ ...formData, password: e.target.value })
+                }
+                placeholder="비밀번호 (선택사항)"
+                className="w-full bg-surface-elevated border border-border rounded-lg pl-12 pr-12 py-3 text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary"
+                maxLength={50}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
+              >
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </label>
         </Card>
 
         {/* Submit */}

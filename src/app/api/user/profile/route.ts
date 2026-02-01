@@ -15,6 +15,9 @@ export async function GET() {
       name: true,
       email: true,
       image: true,
+      pbFull: true,
+      pbHalf: true,
+      pb10k: true,
     },
   });
 
@@ -33,7 +36,7 @@ export async function PUT(request: Request) {
 
   try {
     const body = await request.json();
-    const { name } = body;
+    const { name, pbFull, pbHalf, pb10k } = body;
 
     if (!name || typeof name !== "string") {
       return NextResponse.json(
@@ -50,14 +53,30 @@ export async function PUT(request: Request) {
       );
     }
 
+    // Validate personal best times (must be positive integers or null)
+    const validatePB = (value: unknown): number | null => {
+      if (value === null || value === undefined) return null;
+      const num = Number(value);
+      if (!Number.isInteger(num) || num <= 0) return null;
+      return num;
+    };
+
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
-      data: { name: trimmedName },
+      data: {
+        name: trimmedName,
+        pbFull: validatePB(pbFull),
+        pbHalf: validatePB(pbHalf),
+        pb10k: validatePB(pb10k),
+      },
       select: {
         id: true,
         name: true,
         email: true,
         image: true,
+        pbFull: true,
+        pbHalf: true,
+        pb10k: true,
       },
     });
 

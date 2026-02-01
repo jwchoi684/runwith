@@ -47,7 +47,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
   }
 
   const body = await request.json();
-  const { name, description, isPublic } = body;
+  const { name, description, isPublic, password } = body;
 
   const crew = await prisma.crew.update({
     where: { id },
@@ -55,6 +55,7 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
       name,
       description,
       isPublic,
+      password: password !== undefined ? (password?.trim() || null) : undefined,
     },
   });
 

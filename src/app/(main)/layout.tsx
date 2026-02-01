@@ -1,4 +1,4 @@
-import { auth } from "@/lib/auth";
+import { auth, needsOnboarding } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/layout/bottom-nav";
 
@@ -11,6 +11,12 @@ export default async function MainLayout({
 
   if (!session?.user) {
     redirect("/login");
+  }
+
+  // Check if new user needs to complete onboarding
+  const shouldOnboard = await needsOnboarding(session.user.id);
+  if (shouldOnboard) {
+    redirect("/onboarding");
   }
 
   return (

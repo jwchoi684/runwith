@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Users, Crown, LogOut, Trash2, UserPlus, Globe, Lock, X, Settings } from "lucide-react";
+import { ArrowLeft, Users, Crown, LogOut, Trash2, UserPlus, Globe, Lock, X, Settings, Key, Eye, EyeOff } from "lucide-react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -26,6 +26,7 @@ interface Crew {
   name: string;
   description: string | null;
   isPublic: boolean;
+  password: string | null;
   ownerId: string;
   owner: User;
   members: CrewMember[];
@@ -43,21 +44,42 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
   const [isLoading, setIsLoading] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
   const [isPublic, setIsPublic] = useState(crew.isPublic);
+  const [password, setPassword] = useState(crew.password || "");
+  const [showPassword, setShowPassword] = useState(false);
   const [isSavingSettings, setIsSavingSettings] = useState(false);
   const [removingMemberId, setRemovingMemberId] = useState<string | null>(null);
 
+  // Join with password
+  const [showJoinModal, setShowJoinModal] = useState(false);
+  const [joinPassword, setJoinPassword] = useState("");
+  const [joinError, setJoinError] = useState("");
+
   const handleJoin = async () => {
+    // If crew has password and not already showing modal, show modal
+    if (crew.password && !showJoinModal) {
+      setShowJoinModal(true);
+      return;
+    }
+
     setIsLoading(true);
+    setJoinError("");
     try {
       const response = await fetch(`/api/crews/${crew.id}/members`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ password: joinPassword }),
       });
 
       if (response.ok) {
+        setShowJoinModal(false);
         router.refresh();
+      } else {
+        const data = await response.json();
+        setJoinError(data.error || "가입에 실패했습니다.");
       }
     } catch (error) {
       console.error("Failed to join crew:", error);
+      setJoinError("가입에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
@@ -109,7 +131,10 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
       const response = await fetch(`/api/crews/${crew.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isPublic }),
+        body: JSON.stringify({
+          isPublic,
+          password: password.trim() || null,
+        }),
       });
 
       if (response.ok) {
@@ -122,6 +147,8 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
       setIsSavingSettings(false);
     }
   };
+
+  const hasSettingsChanged = isPublic !== crew.isPublic || password !== (crew.password || "");
 
   const handleRemoveMember = async (memberId: string, memberName: string | null) => {
     if (!confirm(`${memberName || "이 멤버"}님을 크루에서 내보내시겠습니까?`)) return;
@@ -180,14 +207,15 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
 
       {/* Settings Modal */}
       {showSettings && (
-        <div className="fixed inset-0 bg-black/40 z-50 flex items-end justify-center">
-          <div className="bg-surface w-full max-w-lg rounded-t-2xl p-5 pb-8 animate-in slide-in-from-bottom">
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-end justify-center">
+          <div className="bg-surface w-full max-w-lg rounded-t-2xl p-5 pb-24 animate-in slide-in-from-bottom max-h-[85vh] overflow-y-auto">
             <div className="flex items-center justify-between mb-5">
               <h2 className="text-lg font-bold text-text-primary">크루 설정</h2>
               <button
                 onClick={() => {
                   setShowSettings(false);
                   setIsPublic(crew.isPublic);
+                  setPassword(crew.password || "");
                 }}
                 className="p-2 text-text-tertiary hover:bg-surface-elevated rounded-lg"
               >
@@ -195,10 +223,14 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
               </button>
             </div>
 
-            <div className="space-y-4">
+            <div className="space-y-5">
+              {/* Public/Private Setting */}
               <div>
                 <span className="text-sm font-medium text-text-secondary">공개 설정</span>
-                <div className="flex gap-3 mt-3">
+                <p className="text-xs text-text-tertiary mt-1 mb-3">
+                  공개 크루는 검색에 노출됩니다
+                </p>
+                <div className="flex gap-3">
                   <button
                     type="button"
                     onClick={() => setIsPublic(true)}
@@ -220,9 +252,6 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
                         }`}
                       >
                         공개
-                      </p>
-                      <p className="text-xs text-text-tertiary">
-                        누구나 가입 가능
                       </p>
                     </div>
                   </button>
@@ -248,20 +277,99 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
                       >
                         비공개
                       </p>
-                      <p className="text-xs text-text-tertiary">
-                        초대로만 가입
-                      </p>
                     </div>
                   </button>
                 </div>
               </div>
 
+              {/* Password Setting */}
+              <div>
+                <span className="text-sm font-medium text-text-secondary">가입 비밀번호</span>
+                <p className="text-xs text-text-tertiary mt-1 mb-3">
+                  비밀번호를 설정하면 가입 시 비밀번호를 입력해야 합니다
+                </p>
+                <div className="relative">
+                  <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="비밀번호 (선택사항)"
+                    className="w-full bg-surface-elevated border border-border rounded-xl pl-12 pr-12 py-3 text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
+                  >
+                    {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                  </button>
+                </div>
+                {crew.password && (
+                  <p className="text-xs text-text-tertiary mt-2">
+                    현재 비밀번호가 설정되어 있습니다. 비우면 비밀번호가 해제됩니다.
+                  </p>
+                )}
+              </div>
+
               <Button
                 onClick={handleSaveSettings}
-                disabled={isSavingSettings || isPublic === crew.isPublic}
+                disabled={isSavingSettings || !hasSettingsChanged}
                 className="w-full"
               >
                 {isSavingSettings ? "저장 중..." : "설정 저장"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Join Password Modal */}
+      {showJoinModal && (
+        <div className="fixed inset-0 bg-black/40 z-[60] flex items-center justify-center p-4">
+          <div className="bg-surface w-full max-w-sm rounded-2xl p-5 animate-in zoom-in-95">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-bold text-text-primary">비밀번호 입력</h2>
+              <button
+                onClick={() => {
+                  setShowJoinModal(false);
+                  setJoinPassword("");
+                  setJoinError("");
+                }}
+                className="p-2 text-text-tertiary hover:bg-surface-elevated rounded-lg"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <p className="text-sm text-text-secondary mb-4">
+              이 크루는 비밀번호가 설정되어 있습니다.
+            </p>
+
+            <div className="space-y-4">
+              <div className="relative">
+                <Key className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <input
+                  type="password"
+                  value={joinPassword}
+                  onChange={(e) => {
+                    setJoinPassword(e.target.value);
+                    setJoinError("");
+                  }}
+                  placeholder="비밀번호 입력"
+                  className="w-full bg-surface-elevated border border-border rounded-xl pl-12 pr-4 py-3 text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                  autoFocus
+                />
+              </div>
+              {joinError && (
+                <p className="text-error text-sm">{joinError}</p>
+              )}
+              <Button
+                onClick={handleJoin}
+                disabled={isLoading || !joinPassword}
+                className="w-full"
+              >
+                {isLoading ? "가입 중..." : "가입하기"}
               </Button>
             </div>
           </div>
@@ -274,7 +382,7 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
           {crew.name.charAt(0)}
         </div>
         <h2 className="text-xl font-bold text-text-primary">{crew.name}</h2>
-        <div className="flex items-center justify-center gap-3 mt-2">
+        <div className="flex items-center justify-center gap-3 mt-2 flex-wrap">
           <p className="text-text-tertiary">
             <Users className="w-4 h-4 inline mr-1" />
             {crew.members.length}명
@@ -293,6 +401,15 @@ export function CrewDetail({ crew, isMember, isOwner, currentUserId }: CrewDetai
               </>
             )}
           </p>
+          {crew.password && (
+            <>
+              <span className="text-text-disabled">•</span>
+              <p className="text-text-tertiary flex items-center gap-1">
+                <Key className="w-4 h-4" />
+                비밀번호
+              </p>
+            </>
+          )}
         </div>
         {crew.description && (
           <p className="text-text-secondary mt-3 px-4">{crew.description}</p>

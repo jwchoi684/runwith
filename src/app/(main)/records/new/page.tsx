@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,14 +30,6 @@ const feelingOptions = [
   { value: 5, emoji: "🤩", label: "최고" },
 ];
 
-const distanceFilters = [
-  { label: "전체", value: "all" },
-  { label: "풀마라톤", value: "42.195" },
-  { label: "하프", value: "21.0975" },
-  { label: "10K", value: "10" },
-  { label: "5K", value: "5" },
-];
-
 const distancePresets = [
   { label: "5K", value: "5" },
   { label: "10K", value: "10" },
@@ -47,12 +39,12 @@ const distancePresets = [
 
 export default function NewRecordPage() {
   const router = useRouter();
+  const eventDropdownRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isRaceRecord, setIsRaceRecord] = useState(false);
   const [events, setEvents] = useState<MarathonEvent[]>([]);
   const [showEventDropdown, setShowEventDropdown] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
-  const [selectedDistanceFilter, setSelectedDistanceFilter] = useState("all");
   const [eventSearchQuery, setEventSearchQuery] = useState("");
   const [newEvent, setNewEvent] = useState({
     name: "",
@@ -77,6 +69,23 @@ export default function NewRecordPage() {
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (eventDropdownRef.current && !eventDropdownRef.current.contains(event.target as Node)) {
+        setShowEventDropdown(false);
+        setEventSearchQuery("");
+      }
+    };
+
+    if (showEventDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showEventDropdown]);
 
   const fetchEvents = async () => {
     try {
@@ -145,11 +154,10 @@ export default function NewRecordPage() {
   };
 
   const filteredEvents = events.filter(event => {
-    const matchesDistance = selectedDistanceFilter === "all" || event.distance === parseFloat(selectedDistanceFilter);
     const matchesSearch = eventSearchQuery === "" ||
       event.name.toLowerCase().includes(eventSearchQuery.toLowerCase()) ||
       (event.location && event.location.toLowerCase().includes(eventSearchQuery.toLowerCase()));
-    return matchesDistance && matchesSearch;
+    return matchesSearch;
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -313,57 +321,45 @@ export default function NewRecordPage() {
               </div>
             )}
 
-            {/* Search Input */}
-            <div className="relative mb-3">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
-              <input
-                type="text"
-                value={eventSearchQuery}
-                onChange={(e) => setEventSearchQuery(e.target.value)}
-                placeholder="대회명 검색..."
-                className="w-full bg-surface-elevated border border-border rounded-lg pl-9 pr-4 py-2.5 text-sm text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary"
-              />
-            </div>
-
-            {/* Distance Filter */}
-            <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
-              {distanceFilters.map((filter) => (
-                <button
-                  key={filter.value}
-                  type="button"
-                  onClick={() => setSelectedDistanceFilter(filter.value)}
-                  className={`px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-colors ${
-                    selectedDistanceFilter === filter.value
-                      ? "bg-primary text-white"
-                      : "bg-surface-elevated text-text-secondary hover:bg-border"
-                  }`}
-                >
-                  {filter.label}
-                </button>
-              ))}
-            </div>
-
-            {/* Event Dropdown */}
-            <div className="relative">
-              <button
-                type="button"
-                onClick={() => setShowEventDropdown(!showEventDropdown)}
-                className="w-full flex items-center justify-between bg-surface-elevated border border-border rounded-lg px-4 py-3"
-              >
-                <div className="flex items-center gap-2">
-                  <Trophy className="w-5 h-5 text-text-tertiary" />
-                  <span className={formData.eventName ? "text-text-primary font-medium" : "text-text-tertiary"}>
-                    {formData.eventName || "대회를 선택하세요"}
-                  </span>
-                </div>
-                <ChevronDown className={`w-5 h-5 text-text-tertiary transition-transform ${showEventDropdown ? "rotate-180" : ""}`} />
-              </button>
+            {/* Searchable Event Dropdown */}
+            <div className="relative" ref={eventDropdownRef}>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+                <input
+                  type="text"
+                  value={showEventDropdown ? eventSearchQuery : (formData.eventName || "")}
+                  onChange={(e) => {
+                    setEventSearchQuery(e.target.value);
+                    if (!showEventDropdown) setShowEventDropdown(true);
+                  }}
+                  onFocus={() => setShowEventDropdown(true)}
+                  placeholder="대회명 검색 또는 선택..."
+                  className="w-full bg-surface-elevated border border-border rounded-lg pl-10 pr-10 py-3 text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary"
+                />
+                {formData.eventId && !showEventDropdown ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFormData({ ...formData, eventId: "", eventName: "" });
+                      setEventSearchQuery("");
+                    }}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-text-tertiary hover:text-text-secondary"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                ) : (
+                  <ChevronDown
+                    className={`absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary transition-transform cursor-pointer ${showEventDropdown ? "rotate-180" : ""}`}
+                    onClick={() => setShowEventDropdown(!showEventDropdown)}
+                  />
+                )}
+              </div>
 
               {showEventDropdown && (
                 <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-xl shadow-lg z-10 max-h-64 overflow-y-auto">
                   {filteredEvents.length === 0 ? (
                     <div className="px-4 py-3 text-text-tertiary text-sm text-center">
-                      {eventSearchQuery ? "검색 결과가 없습니다" : "해당 거리의 대회가 없습니다"}
+                      {eventSearchQuery ? "검색 결과가 없습니다" : "등록된 대회가 없습니다"}
                     </div>
                   ) : (
                     filteredEvents.map((event) => (

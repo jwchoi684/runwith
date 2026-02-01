@@ -48,7 +48,13 @@ export async function GET(request: NextRequest) {
       orderBy: { createdAt: "desc" },
     });
 
-    return NextResponse.json(crews);
+    // Transform password to boolean for security
+    const crewsWithPasswordFlag = crews.map(crew => ({
+      ...crew,
+      password: crew.password ? true : null,
+    }));
+
+    return NextResponse.json(crewsWithPasswordFlag);
   }
 
   // Get all public crews
@@ -61,7 +67,13 @@ export async function GET(request: NextRequest) {
     orderBy: { createdAt: "desc" },
   });
 
-  return NextResponse.json(crews);
+  // Transform password to boolean for security
+  const crewsWithPasswordFlag = crews.map(crew => ({
+    ...crew,
+    password: crew.password ? true : null,
+  }));
+
+  return NextResponse.json(crewsWithPasswordFlag);
 }
 
 // POST /api/crews - Create a new crew
@@ -73,7 +85,7 @@ export async function POST(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { name, description, isPublic = true } = body;
+  const { name, description, isPublic = true, password } = body;
 
   if (!name) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
@@ -84,6 +96,7 @@ export async function POST(request: NextRequest) {
       name,
       description,
       isPublic,
+      password: password?.trim() || null,
       ownerId: session.user.id,
       members: {
         create: {

@@ -27,18 +27,10 @@ const distanceFilters = [
   { label: "5K", value: "5" },
 ];
 
-const timeFilters = [
-  { label: "이번 주", value: "week" },
-  { label: "이번 달", value: "month" },
-  { label: "올해", value: "year" },
-  { label: "전체", value: "all" },
-];
-
 export default function LeaderboardPage() {
   const [crews, setCrews] = useState<Crew[]>([]);
   const [selectedCrew, setSelectedCrew] = useState<string>("all");
   const [selectedDistance, setSelectedDistance] = useState("all");
-  const [selectedTime, setSelectedTime] = useState("month");
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showCrewDropdown, setShowCrewDropdown] = useState(false);
@@ -49,7 +41,7 @@ export default function LeaderboardPage() {
 
   useEffect(() => {
     fetchLeaderboard();
-  }, [selectedCrew, selectedDistance, selectedTime]);
+  }, [selectedCrew, selectedDistance]);
 
   const fetchCrews = async () => {
     try {
@@ -69,7 +61,6 @@ export default function LeaderboardPage() {
       const params = new URLSearchParams({
         crew: selectedCrew,
         distance: selectedDistance,
-        time: selectedTime,
       });
       const response = await fetch(`/api/leaderboard?${params}`);
       if (response.ok) {
@@ -150,23 +141,6 @@ export default function LeaderboardPage() {
               selectedDistance === filter.value
                 ? "bg-primary text-white"
                 : "bg-surface-elevated text-text-secondary hover:bg-border"
-            }`}
-          >
-            {filter.label}
-          </button>
-        ))}
-      </div>
-
-      {/* Time Filter */}
-      <div className="flex border-b border-border">
-        {timeFilters.map((filter) => (
-          <button
-            key={filter.value}
-            onClick={() => setSelectedTime(filter.value)}
-            className={`flex-1 py-3 text-sm font-medium text-center border-b-2 transition-colors ${
-              selectedTime === filter.value
-                ? "text-primary border-primary"
-                : "text-text-tertiary border-transparent hover:text-text-secondary"
             }`}
           >
             {filter.label}

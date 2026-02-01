@@ -1,45 +1,94 @@
-import { auth } from "@/lib/auth";
-import { prisma } from "@/lib/prisma";
+"use client";
+
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, Search } from "lucide-react";
+import { Plus, Users, Search, UserPlus } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
-export default async function CrewsPage() {
-  const session = await auth();
+interface Crew {
+  id: string;
+  name: string;
+  description: string | null;
+  _count: { members: number };
+}
 
-  // Get user's crews
-  const myCrews = await prisma.crew.findMany({
-    where: {
-      members: {
-        some: { userId: session?.user?.id },
-      },
-    },
-    include: {
-      _count: { select: { members: true } },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+export default function CrewsPage() {
+  const router = useRouter();
+  const [myCrews, setMyCrews] = useState<Crew[]>([]);
+  const [discoverCrews, setDiscoverCrews] = useState<Crew[]>([]);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeTab, setActiveTab] = useState<"my" | "discover">("my");
+  const [isLoading, setIsLoading] = useState(true);
+  const [joiningId, setJoiningId] = useState<string | null>(null);
 
-  // Get public crews user is not a member of
-  const discoverCrews = await prisma.crew.findMany({
-    where: {
-      isPublic: true,
-      NOT: {
-        members: {
-          some: { userId: session?.user?.id },
-        },
-      },
-    },
-    include: {
-      _count: { select: { members: true } },
-    },
-    orderBy: { createdAt: "desc" },
-    take: 5,
-  });
+  useEffect(() => {
+    fetchCrews();
+  }, []);
+
+  const fetchCrews = async () => {
+    setIsLoading(true);
+    try {
+      const [myResponse, discoverResponse] = await Promise.all([
+        fetch("/api/crews?filter=my"),
+        fetch("/api/crews?discover=true"),
+      ]);
+
+      if (myResponse.ok) {
+        setMyCrews(await myResponse.json());
+      }
+      if (discoverResponse.ok) {
+        setDiscoverCrews(await discoverResponse.json());
+      }
+    } catch (error) {
+      console.error("Failed to fetch crews:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleJoin = async (crewId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setJoiningId(crewId);
+    try {
+      const response = await fetch(`/api/crews/${crewId}/members`, {
+        method: "POST",
+      });
+
+      if (response.ok) {
+        // Move crew from discover to my crews
+        const joinedCrew = discoverCrews.find((c) => c.id === crewId);
+        if (joinedCrew) {
+          setMyCrews((prev) => [joinedCrew, ...prev]);
+          setDiscoverCrews((prev) => prev.filter((c) => c.id !== crewId));
+        }
+        router.refresh();
+      }
+    } catch (error) {
+      console.error("Failed to join crew:", error);
+    } finally {
+      setJoiningId(null);
+    }
+  };
+
+  const filteredMyCrews = myCrews.filter(
+    (crew) =>
+      crew.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      crew.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredDiscoverCrews = discoverCrews.filter(
+    (crew) =>
+      crew.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      crew.description?.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const currentCrews = activeTab === "my" ? filteredMyCrews : filteredDiscoverCrews;
 
   return (
-    <div className="p-4 space-y-6">
+    <div className="p-4 space-y-4">
       {/* Header */}
       <header className="flex items-center justify-between pt-2">
         <h1 className="text-2xl font-bold text-text-primary">크루</h1>
@@ -51,81 +100,115 @@ export default async function CrewsPage() {
         </Link>
       </header>
 
-      {/* My Crews */}
-      <section>
-        <h2 className="text-lg font-semibold text-text-primary mb-3">내 크루</h2>
-        {myCrews.length === 0 ? (
-          <Card className="text-center py-8">
-            <Users className="w-10 h-10 text-text-tertiary mx-auto mb-3" />
-            <p className="text-text-secondary mb-4">아직 가입한 크루가 없습니다</p>
-            <Link href="/crews/new">
+      {/* Search */}
+      <div className="relative">
+        <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
+        <input
+          type="text"
+          value={searchQuery}
+          onChange={(e) => setSearchQuery(e.target.value)}
+          placeholder="크루 검색..."
+          className="w-full bg-surface border border-border rounded-xl pl-12 pr-4 py-3 text-text-primary placeholder-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary"
+        />
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-border">
+        <button
+          onClick={() => setActiveTab("my")}
+          className={`flex-1 py-3 text-sm font-medium text-center border-b-2 transition-colors ${
+            activeTab === "my"
+              ? "text-primary border-primary"
+              : "text-text-tertiary border-transparent hover:text-text-secondary"
+          }`}
+        >
+          내 크루 ({myCrews.length})
+        </button>
+        <button
+          onClick={() => setActiveTab("discover")}
+          className={`flex-1 py-3 text-sm font-medium text-center border-b-2 transition-colors ${
+            activeTab === "discover"
+              ? "text-primary border-primary"
+              : "text-text-tertiary border-transparent hover:text-text-secondary"
+          }`}
+        >
+          크루 찾기 ({discoverCrews.length})
+        </button>
+      </div>
+
+      {/* Crew List */}
+      {isLoading ? (
+        <div className="text-center py-12">
+          <div className="animate-spin w-8 h-8 border-2 border-primary border-t-transparent rounded-full mx-auto" />
+          <p className="text-text-tertiary mt-3">불러오는 중...</p>
+        </div>
+      ) : currentCrews.length === 0 ? (
+        <Card className="text-center py-12">
+          <Users className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+          <p className="text-text-secondary">
+            {activeTab === "my"
+              ? searchQuery
+                ? "검색 결과가 없습니다"
+                : "아직 가입한 크루가 없습니다"
+              : searchQuery
+              ? "검색 결과가 없습니다"
+              : "가입 가능한 크루가 없습니다"}
+          </p>
+          {activeTab === "my" && !searchQuery && (
+            <Link href="/crews/new" className="inline-block mt-4">
               <Button variant="secondary" size="sm">
                 크루 만들기
               </Button>
             </Link>
-          </Card>
-        ) : (
-          <div className="space-y-3">
-            {myCrews.map((crew) => (
-              <Link key={crew.id} href={`/crews/${crew.id}`}>
-                <Card variant="interactive">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-[--radius-lg] bg-primary flex items-center justify-center text-white text-xl font-bold">
-                      {crew.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-text-primary">{crew.name}</h3>
-                      <p className="text-sm text-text-tertiary mt-0.5">
-                        👥 {crew._count.members}명
-                      </p>
-                      {crew.description && (
-                        <p className="text-sm text-text-secondary mt-1 line-clamp-1">
-                          {crew.description}
-                        </p>
-                      )}
-                    </div>
+          )}
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {currentCrews.map((crew) => (
+            <Link key={crew.id} href={`/crews/${crew.id}`}>
+              <Card variant="interactive">
+                <div className="flex items-center gap-4">
+                  <div
+                    className={`w-14 h-14 rounded-xl flex items-center justify-center text-xl font-bold shrink-0 ${
+                      activeTab === "my"
+                        ? "bg-primary text-white"
+                        : "bg-surface-elevated text-text-secondary"
+                    }`}
+                  >
+                    {crew.name.charAt(0)}
                   </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      {/* Discover Crews */}
-      {discoverCrews.length > 0 && (
-        <section>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="text-lg font-semibold text-text-primary">크루 찾기</h2>
-            <Link href="/crews/discover" className="text-sm text-primary">
-              전체보기
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold text-text-primary">{crew.name}</h3>
+                    <p className="text-sm text-text-tertiary">
+                      👥 {crew._count.members}명
+                    </p>
+                    {crew.description && (
+                      <p className="text-sm text-text-secondary mt-1 line-clamp-1">
+                        {crew.description}
+                      </p>
+                    )}
+                  </div>
+                  {activeTab === "discover" && (
+                    <Button
+                      size="sm"
+                      onClick={(e) => handleJoin(crew.id, e)}
+                      disabled={joiningId === crew.id}
+                    >
+                      {joiningId === crew.id ? (
+                        "가입 중..."
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-1" />
+                          가입
+                        </>
+                      )}
+                    </Button>
+                  )}
+                </div>
+              </Card>
             </Link>
-          </div>
-          <div className="space-y-3">
-            {discoverCrews.map((crew) => (
-              <Link key={crew.id} href={`/crews/${crew.id}`}>
-                <Card variant="interactive">
-                  <div className="flex items-start gap-4">
-                    <div className="w-14 h-14 rounded-[--radius-lg] bg-surface-elevated flex items-center justify-center text-text-secondary text-xl font-bold">
-                      {crew.name.charAt(0)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-text-primary">{crew.name}</h3>
-                      <p className="text-sm text-text-tertiary mt-0.5">
-                        👥 {crew._count.members}명
-                      </p>
-                      {crew.description && (
-                        <p className="text-sm text-text-secondary mt-1 line-clamp-1">
-                          {crew.description}
-                        </p>
-                      )}
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            ))}
-          </div>
-        </section>
+          ))}
+        </div>
       )}
     </div>
   );

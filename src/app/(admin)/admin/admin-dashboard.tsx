@@ -1824,8 +1824,9 @@ export function AdminDashboard({
                           ))}
                         </tbody>
                       </table>
-                  </div>
-                </Card>
+                    </div>
+                  </Card>
+                </>
               )}
             </div>
           )}

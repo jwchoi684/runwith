@@ -744,11 +744,14 @@ export function AdminDashboard({
     );
   };
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      user.email?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredUsers = users.filter((user) => {
+    if (!searchQuery.trim()) return true; // 검색어 없으면 모든 사용자 표시
+    const query = searchQuery.toLowerCase();
+    return (
+      user.name?.toLowerCase().includes(query) ||
+      user.email?.toLowerCase().includes(query)
+    );
+  });
 
   const filteredCrews = crews.filter(
     (crew) =>

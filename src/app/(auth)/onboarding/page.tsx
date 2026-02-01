@@ -113,11 +113,8 @@ export default function OnboardingPage() {
   };
 
   const handleSkip = () => {
-    if (step === "name") {
-      router.push("/");
-    } else {
-      handleFinalSubmit();
-    }
+    // Only records step can be skipped, name is required
+    handleFinalSubmit();
   };
 
   return (
@@ -171,14 +168,6 @@ export default function OnboardingPage() {
                   다음
                   <ChevronRight className="w-4 h-4 ml-1" />
                 </Button>
-
-                <button
-                  type="button"
-                  onClick={handleSkip}
-                  className="w-full text-center text-text-tertiary text-sm hover:text-text-secondary transition-colors"
-                >
-                  나중에 설정하기
-                </button>
               </form>
             </Card>
           </>

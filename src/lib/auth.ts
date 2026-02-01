@@ -110,17 +110,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
 export async function needsOnboarding(userId: string): Promise<boolean> {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { name: true, createdAt: true },
+    select: { name: true },
   });
 
   if (!user) return false;
 
-  // If user was created less than 5 minutes ago and name looks like auto-generated, needs onboarding
-  const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000);
-  const isNewUser = user.createdAt > fiveMinutesAgo;
-
-  // Check if name is null or looks like it came directly from OAuth
+  // Check if name is null or empty - name is required
   const nameNeedsUpdate = !user.name || user.name.trim() === "";
 
-  return isNewUser && nameNeedsUpdate;
+  return nameNeedsUpdate;
 }

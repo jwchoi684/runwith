@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const crewId = searchParams.get("crew") || "all";
   const distance = searchParams.get("distance") || "all";
-  const time = searchParams.get("time") || "month";
+  const time = searchParams.get("time") || "all";
 
   // Build date filter
   let dateFilter: Date | undefined;

@@ -85,6 +85,7 @@ model MarathonEvent {
   id          String       @id @default(cuid())
   name        String
   location    String?
+  region      String       @default("domestic") // "domestic" or "international"
   distance    Float        // in kilometers (42.195, 21.0975, 10, 5)
   courses     String?      // comma-separated course types (e.g., "Full,Half,10km,5km")
   date        DateTime?    // event date (optional, for annual events)

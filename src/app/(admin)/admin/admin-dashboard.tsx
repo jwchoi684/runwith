@@ -109,6 +109,7 @@ interface MarathonEvent {
   id: string;
   name: string;
   location: string | null;
+  region: string;
   distance: number;
   courses: string | null;
   date: Date | null;
@@ -216,6 +217,7 @@ export function AdminDashboard({
   const [eventForm, setEventForm] = useState({
     name: "",
     location: "",
+    region: "domestic" as "domestic" | "international",
     courses: [] as string[],
     customCourse: "",
     date: "",
@@ -337,6 +339,7 @@ export function AdminDashboard({
       setEventForm({
         name: event.name,
         location: event.location || "",
+        region: (event.region as "domestic" | "international") || "domestic",
         courses: presetCourses,
         customCourse: customCourses.join(", "),
         date: event.date ? new Date(event.date).toISOString().split("T")[0] : "",
@@ -347,6 +350,7 @@ export function AdminDashboard({
       setEventForm({
         name: "",
         location: "",
+        region: "domestic",
         courses: [],
         customCourse: "",
         date: "",
@@ -379,6 +383,7 @@ export function AdminDashboard({
         body: JSON.stringify({
           name: eventForm.name.trim(),
           location: eventForm.location.trim() || null,
+          region: eventForm.region,
           distance: 0, // Deprecated field, keeping for schema compatibility
           courses: allCourses.length > 0 ? allCourses.join(",") : null,
           date: eventForm.date || null,
@@ -920,6 +925,34 @@ export function AdminDashboard({
                   placeholder="예: 서울"
                   className="mt-1 w-full bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
                 />
+              </div>
+
+              <div>
+                <label className="text-sm font-medium text-text-secondary">지역</label>
+                <div className="flex gap-2 mt-1">
+                  <button
+                    type="button"
+                    onClick={() => setEventForm({ ...eventForm, region: "domestic" })}
+                    className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-all ${
+                      eventForm.region === "domestic"
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "bg-surface-elevated border-border text-text-secondary hover:border-text-secondary"
+                    }`}
+                  >
+                    🇰🇷 국내
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setEventForm({ ...eventForm, region: "international" })}
+                    className={`flex-1 py-2 px-4 rounded-lg border text-sm font-medium transition-all ${
+                      eventForm.region === "international"
+                        ? "bg-primary/10 border-primary text-primary"
+                        : "bg-surface-elevated border-border text-text-secondary hover:border-text-secondary"
+                    }`}
+                  >
+                    🌍 해외
+                  </button>
+                </div>
               </div>
 
               <div>
@@ -1757,6 +1790,7 @@ export function AdminDashboard({
                             </button>
                           </th>
                           <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회명</th>
+                          <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">지역</th>
                           <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">장소</th>
                           <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">종목</th>
                           <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
@@ -1793,6 +1827,13 @@ export function AdminDashboard({
                                   <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
                                 )}
                               </div>
+                            </td>
+                            <td className="px-4 py-3 text-center text-sm">
+                              {event.region === "international" ? (
+                                <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">해외</span>
+                              ) : (
+                                <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">국내</span>
+                              )}
                             </td>
                             <td className="px-4 py-3 text-sm text-text-secondary">{event.location || "-"}</td>
                             <td className="px-4 py-3 text-sm text-text-primary">{event.courses || "-"}</td>

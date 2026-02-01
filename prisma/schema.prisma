@@ -151,6 +151,7 @@ model AccessLog {
   ipAddress String?
   userAgent String?
   path      String?
+  metadata  Json?    // Additional info like geolocation
   createdAt DateTime @default(now())
 
   @@index([userId])

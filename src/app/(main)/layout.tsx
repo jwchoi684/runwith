@@ -1,6 +1,7 @@
 import { auth, needsOnboarding } from "@/lib/auth";
 import { redirect } from "next/navigation";
 import { BottomNav } from "@/components/layout/bottom-nav";
+import { AccessLogger } from "@/components/access-logger";
 
 export default async function MainLayout({
   children,
@@ -21,6 +22,7 @@ export default async function MainLayout({
 
   return (
     <div className="min-h-screen pb-20">
+      <AccessLogger />
       <main className="max-w-lg mx-auto">{children}</main>
       <BottomNav />
     </div>

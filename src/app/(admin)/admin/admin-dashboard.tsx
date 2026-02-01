@@ -154,6 +154,7 @@ interface AccessLog {
   ipAddress: string | null;
   userAgent: string | null;
   path: string | null;
+  metadata: { location?: string } | null;
   createdAt: Date;
   user: {
     id: string;
@@ -2650,6 +2651,12 @@ export function AdminDashboard({
                           </span>
                           <span className="text-text-tertiary">{formatRelativeTime(new Date(log.createdAt))}</span>
                         </div>
+                        {(log.ipAddress || log.metadata?.location) && (
+                          <div className="mt-2 pt-2 border-t border-border text-xs text-text-tertiary">
+                            {log.ipAddress && <span className="font-mono">{log.ipAddress}</span>}
+                            {log.metadata?.location && <span className="ml-2">{log.metadata.location}</span>}
+                          </div>
+                        )}
                       </Card>
                     ))}
                   </div>
@@ -2663,7 +2670,7 @@ export function AdminDashboard({
                             <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
                             <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">액션</th>
                             <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">시간</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">IP 주소</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">IP / 위치</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -2698,7 +2705,12 @@ export function AdminDashboard({
                                 </span>
                               </td>
                               <td className="px-4 py-3 text-sm text-text-secondary">{formatRelativeTime(new Date(log.createdAt))}</td>
-                              <td className="px-4 py-3 text-sm text-text-tertiary font-mono hidden lg:table-cell">{log.ipAddress || "-"}</td>
+                              <td className="px-4 py-3 hidden lg:table-cell">
+                                <div className="text-sm font-mono text-text-tertiary">{log.ipAddress || "-"}</div>
+                                {log.metadata?.location && (
+                                  <div className="text-xs text-text-tertiary mt-0.5">{log.metadata.location}</div>
+                                )}
+                              </td>
                             </tr>
                           ))}
                         </tbody>

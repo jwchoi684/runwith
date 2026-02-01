@@ -1162,11 +1162,20 @@ export function AdminDashboard({
                   연도를 선택하고 &quot;일정 조회&quot; 버튼을 눌러주세요
                 </p>
               ) : (
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="text-sm text-text-secondary">
-                      총 {scrapedEvents.length}개 대회 (새로운 대회: {scrapedEvents.filter(e => !e.alreadyExists).length}개)
-                    </span>
+                <div className="space-y-4">
+                  {/* Summary */}
+                  <div className="flex items-center justify-between p-3 bg-surface-secondary rounded-lg">
+                    <div className="flex items-center gap-4 text-sm">
+                      <span className="text-text-primary font-medium">
+                        총 {scrapedEvents.length}개 대회
+                      </span>
+                      <span className="text-success">
+                        새 대회: {scrapedEvents.filter(e => !e.alreadyExists).length}개
+                      </span>
+                      <span className="text-text-tertiary">
+                        등록됨: {scrapedEvents.filter(e => e.alreadyExists).length}개
+                      </span>
+                    </div>
                     <button
                       onClick={() => {
                         const newIds = scrapedEvents
@@ -1174,59 +1183,95 @@ export function AdminDashboard({
                           .map(e => e.externalId);
                         setSelectedImportIds(new Set(newIds));
                       }}
-                      className="text-sm text-primary hover:underline"
+                      className="text-sm text-primary font-medium hover:underline"
                     >
                       새 대회만 선택
                     </button>
                   </div>
-                  {scrapedEvents.map((event) => (
-                    <div
-                      key={event.externalId}
-                      className={`flex items-center gap-3 p-3 rounded-lg border ${
-                        event.alreadyExists ? "border-border bg-surface-elevated opacity-50" : "border-border"
-                      }`}
-                    >
-                      <button
-                        onClick={() => {
-                          if (event.alreadyExists) return;
-                          setSelectedImportIds(prev => {
-                            const newSet = new Set(prev);
-                            if (newSet.has(event.externalId)) {
-                              newSet.delete(event.externalId);
-                            } else {
-                              newSet.add(event.externalId);
-                            }
-                            return newSet;
-                          });
-                        }}
-                        disabled={event.alreadyExists}
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
-                          selectedImportIds.has(event.externalId)
-                            ? "bg-primary border-primary text-white"
-                            : event.alreadyExists
-                            ? "border-border bg-surface-elevated"
-                            : "border-border hover:border-text-secondary"
-                        }`}
-                      >
-                        {selectedImportIds.has(event.externalId) && (
-                          <Check className="w-3 h-3" />
-                        )}
-                      </button>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-text-primary truncate">
-                          {event.name}
-                          {event.alreadyExists && (
-                            <span className="ml-2 text-xs text-text-tertiary">(이미 등록됨)</span>
-                          )}
-                        </p>
-                        <div className="flex items-center gap-3 text-sm text-text-tertiary">
-                          <span>{event.date}</span>
-                          {event.location && <span>{event.location}</span>}
-                          <span>{event.courses.join(", ")}</span>
-                        </div>
+
+                  {/* New Events Section */}
+                  {scrapedEvents.filter(e => !e.alreadyExists).length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-text-primary mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-success"></span>
+                        새로운 대회
+                      </h4>
+                      <div className="space-y-2">
+                        {scrapedEvents.filter(e => !e.alreadyExists).map((event) => (
+                          <div
+                            key={event.externalId}
+                            className="flex items-center gap-3 p-3 rounded-lg border border-border hover:border-primary/30 transition-colors"
+                          >
+                            <button
+                              onClick={() => {
+                                setSelectedImportIds(prev => {
+                                  const newSet = new Set(prev);
+                                  if (newSet.has(event.externalId)) {
+                                    newSet.delete(event.externalId);
+                                  } else {
+                                    newSet.add(event.externalId);
+                                  }
+                                  return newSet;
+                                });
+                              }}
+                              className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
+                                selectedImportIds.has(event.externalId)
+                                  ? "bg-primary border-primary text-white"
+                                  : "border-border hover:border-primary"
+                              }`}
+                            >
+                              {selectedImportIds.has(event.externalId) && (
+                                <Check className="w-3 h-3" />
+                              )}
+                            </button>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-text-primary truncate">{event.name}</p>
+                              <div className="flex items-center gap-3 text-sm text-text-tertiary">
+                                <span>{event.date}</span>
+                                {event.location && <span>{event.location}</span>}
+                                <span>{event.courses.join(", ")}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  )}
+
+                  {/* Already Exists Section */}
+                  {scrapedEvents.filter(e => e.alreadyExists).length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-semibold text-text-tertiary mb-2 flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-text-tertiary"></span>
+                        이미 등록된 대회
+                      </h4>
+                      <div className="space-y-2">
+                        {scrapedEvents.filter(e => e.alreadyExists).map((event) => (
+                          <div
+                            key={event.externalId}
+                            className="flex items-center gap-3 p-3 rounded-lg border border-border-light bg-surface-secondary"
+                          >
+                            <div className="w-5 h-5 rounded border-2 border-border-light bg-surface-secondary flex items-center justify-center shrink-0">
+                              <Check className="w-3 h-3 text-text-disabled" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium text-text-tertiary truncate">
+                                {event.name}
+                                <span className="ml-2 px-1.5 py-0.5 text-[10px] font-medium bg-surface rounded text-text-disabled">
+                                  등록됨
+                                </span>
+                              </p>
+                              <div className="flex items-center gap-3 text-sm text-text-disabled">
+                                <span>{event.date}</span>
+                                {event.location && <span>{event.location}</span>}
+                                <span>{event.courses.join(", ")}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
             </div>

@@ -176,50 +176,61 @@ export default function EventsPage() {
                     <Link
                       key={event.id}
                       href={`/records/new?eventId=${event.id}`}
-                      className="flex items-center gap-3 p-4 hover:bg-surface-elevated transition-colors"
+                      className="block p-4 hover:bg-surface-elevated transition-colors"
                     >
-                      {/* Left: Circular Date Badge */}
-                      <div className="w-12 h-12 rounded-full bg-primary/10 flex flex-col items-center justify-center shrink-0">
-                        <span className="text-base font-bold text-primary leading-none">
-                          {eventDate.getDate()}
-                        </span>
-                        <span className="text-[10px] text-primary/70 mt-0.5">
-                          {["일", "월", "화", "수", "목", "금", "토"][eventDate.getDay()]}
-                        </span>
-                      </div>
-
-                      {/* Middle: Event Info */}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-1.5">
-                          {event.isOfficial && (
-                            <Trophy className="w-4 h-4 text-yellow-500 shrink-0" />
-                          )}
-                          <h3 className="font-medium text-text-primary truncate">
-                            {event.name}
-                          </h3>
-                        </div>
-                        <p className="text-sm text-text-tertiary mt-0.5 truncate">
-                          {formatted}
-                          {event.location && ` · ${event.location}`}
-                        </p>
-                      </div>
-
-                      {/* Right: Course Badges */}
-                      <div className="shrink-0 flex gap-1">
-                        {event.courses ? (
-                          event.courses.split(",").slice(0, 2).map((course) => (
-                            <span
-                              key={course}
-                              className="text-xs px-2 py-1 bg-surface-elevated rounded-md text-text-secondary font-medium"
-                            >
-                              {course.trim()}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="text-xs px-2 py-1 bg-surface-elevated rounded-md text-text-secondary font-medium">
-                            {getDistanceLabel(event.distance)}
+                      {/* Top Row: Date Badge + Event Name */}
+                      <div className="flex items-start gap-3">
+                        {/* Left: Circular Date Badge */}
+                        <div className="w-12 h-12 rounded-full bg-primary/10 flex flex-col items-center justify-center shrink-0">
+                          <span className="text-base font-bold text-primary leading-none">
+                            {eventDate.getDate()}
                           </span>
-                        )}
+                          <span className="text-[10px] text-primary/70 mt-0.5">
+                            {["일", "월", "화", "수", "목", "금", "토"][eventDate.getDay()]}
+                          </span>
+                        </div>
+
+                        {/* Right: Event Info */}
+                        <div className="flex-1 min-w-0">
+                          {/* Event Name */}
+                          <div className="flex items-start gap-1.5">
+                            {event.isOfficial && (
+                              <Trophy className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
+                            )}
+                            <h3 className="font-medium text-text-primary leading-snug">
+                              {event.name}
+                            </h3>
+                          </div>
+
+                          {/* Date & Location */}
+                          <p className="text-sm text-text-tertiary mt-1">
+                            {formatted}
+                          </p>
+                          {event.location && (
+                            <p className="text-sm text-text-tertiary flex items-center gap-1 mt-0.5">
+                              <MapPin className="w-3.5 h-3.5 shrink-0" />
+                              <span>{event.location}</span>
+                            </p>
+                          )}
+
+                          {/* Course Badges */}
+                          <div className="flex flex-wrap gap-1.5 mt-2">
+                            {event.courses ? (
+                              event.courses.split(",").map((course) => (
+                                <span
+                                  key={course}
+                                  className="text-xs px-2 py-1 bg-surface-elevated rounded-md text-text-secondary font-medium"
+                                >
+                                  {course.trim()}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-xs px-2 py-1 bg-surface-elevated rounded-md text-text-secondary font-medium">
+                                {getDistanceLabel(event.distance)}
+                              </span>
+                            )}
+                          </div>
+                        </div>
                       </div>
                     </Link>
                   );

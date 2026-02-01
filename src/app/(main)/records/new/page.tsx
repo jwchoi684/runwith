@@ -4,7 +4,7 @@ import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cloud, Sun, CloudRain, Snowflake, ChevronDown, Trophy, MapPin, Search, Plus, X, Calendar } from "lucide-react";
+import { ArrowLeft, Cloud, Sun, CloudRain, Snowflake, ChevronDown, MapPin, Search, Plus, X, Calendar } from "lucide-react";
 import Link from "next/link";
 
 interface MarathonEvent {
@@ -41,7 +41,6 @@ export default function NewRecordPage() {
   const router = useRouter();
   const eventDropdownRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isRaceRecord, setIsRaceRecord] = useState(false);
   const [events, setEvents] = useState<MarathonEvent[]>([]);
   const [showEventDropdown, setShowEventDropdown] = useState(false);
   const [showAddEvent, setShowAddEvent] = useState(false);
@@ -235,7 +234,7 @@ export default function NewRecordPage() {
           notes: formData.notes || null,
           weather: formData.weather || null,
           feeling: formData.feeling || null,
-          eventId: isRaceRecord ? formData.eventId || null : null,
+          eventId: formData.eventId || null,
         }),
       });
 
@@ -263,41 +262,8 @@ export default function NewRecordPage() {
       </header>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Record Type Toggle */}
-        <Card>
-          <span className="text-sm font-medium text-text-secondary">기록 유형</span>
-          <div className="flex gap-2 mt-2">
-            <button
-              type="button"
-              onClick={() => {
-                setIsRaceRecord(false);
-                setFormData({ ...formData, eventId: "", eventName: "" });
-              }}
-              className={`flex-1 py-3 px-4 rounded-lg border text-sm font-medium transition-all ${
-                !isRaceRecord
-                  ? "bg-primary/10 border-primary text-primary"
-                  : "bg-surface-elevated border-border text-text-secondary hover:border-text-secondary"
-              }`}
-            >
-              일반 러닝
-            </button>
-            <button
-              type="button"
-              onClick={() => setIsRaceRecord(true)}
-              className={`flex-1 py-3 px-4 rounded-lg border text-sm font-medium transition-all flex items-center justify-center gap-2 ${
-                isRaceRecord
-                  ? "bg-primary/10 border-primary text-primary"
-                  : "bg-surface-elevated border-border text-text-secondary hover:border-text-secondary"
-              }`}
-            >
-              <Trophy className="w-4 h-4" />
-              대회 기록
-            </button>
-          </div>
-        </Card>
-
         {/* Marathon Event Selection */}
-        {isRaceRecord && (
+        <div>
           <Card>
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-text-secondary">대회 선택</span>
@@ -518,10 +484,10 @@ export default function NewRecordPage() {
               )}
             </div>
           </Card>
-        )}
+        </div>
 
-        {/* Date - Only show for non-race records */}
-        {!(isRaceRecord && formData.eventId) && (
+        {/* Date - Only show when no event is selected */}
+        {!formData.eventId && (
           <Card className="overflow-hidden">
             <label className="block">
               <span className="text-sm font-medium text-text-secondary">날짜</span>
@@ -583,8 +549,8 @@ export default function NewRecordPage() {
           </label>
         </Card>
 
-        {/* Show selected event info for race record */}
-        {isRaceRecord && formData.eventId && (
+        {/* Show selected event info */}
+        {formData.eventId && (
           <Card className="bg-primary/5 border border-primary/20">
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium text-text-secondary">대회 날짜</span>

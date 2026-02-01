@@ -35,6 +35,9 @@ export default function SettingsPage() {
   const [newName, setNewName] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState("");
 
   const [notifications, setNotifications] = useState({
     crewActivity: true,
@@ -105,6 +108,30 @@ export default function SettingsPage() {
 
   const handleLogout = async () => {
     await signOut({ callbackUrl: "/login" });
+  };
+
+  const handleDeleteAccount = async () => {
+    setIsDeleting(true);
+    setDeleteError("");
+
+    try {
+      const response = await fetch("/api/user/delete", {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        // 계정 삭제 성공 - 로그아웃
+        await signOut({ callbackUrl: "/login" });
+      } else {
+        const data = await response.json();
+        setDeleteError(data.error || "계정 삭제에 실패했습니다");
+      }
+    } catch (error) {
+      console.error("Failed to delete account:", error);
+      setDeleteError("계정 삭제에 실패했습니다");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   return (
@@ -277,12 +304,58 @@ export default function SettingsPage() {
             <LogOut className="w-5 h-5 text-text-tertiary" />
             <span className="font-medium text-text-primary">로그아웃</span>
           </button>
-          <button className="w-full flex items-center gap-3 p-4 text-left hover:bg-surface-elevated transition-colors">
+          <button
+            onClick={() => setShowDeleteConfirm(true)}
+            className="w-full flex items-center gap-3 p-4 text-left hover:bg-surface-elevated transition-colors"
+          >
             <Trash2 className="w-5 h-5 text-error" />
             <span className="font-medium text-error">계정 삭제</span>
           </button>
         </Card>
       </section>
+
+      {/* Delete Confirmation Modal */}
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-2xl p-6 max-w-sm w-full">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-error" />
+              </div>
+              <h3 className="text-xl font-bold text-text-primary mb-2">계정을 삭제하시겠습니까?</h3>
+              <p className="text-text-secondary text-sm">
+                계정을 삭제하면 모든 데이터가 영구적으로 삭제됩니다.
+                이 작업은 되돌릴 수 없습니다.
+              </p>
+            </div>
+
+            {deleteError && (
+              <p className="text-error text-sm text-center mb-4">{deleteError}</p>
+            )}
+
+            <div className="space-y-3">
+              <Button
+                onClick={handleDeleteAccount}
+                disabled={isDeleting}
+                className="w-full bg-error hover:bg-error/90"
+              >
+                {isDeleting ? "삭제 중..." : "계정 삭제"}
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  setDeleteError("");
+                }}
+                disabled={isDeleting}
+                className="w-full"
+              >
+                취소
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* App Info */}
       <div className="text-center pt-4 pb-8">

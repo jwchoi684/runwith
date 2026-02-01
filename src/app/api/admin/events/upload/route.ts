@@ -79,11 +79,10 @@ export async function POST(request: NextRequest) {
         let eventDate: Date | null = null;
         if (dateValue) {
           if (typeof dateValue === "number") {
-            // Excel serial date
-            eventDate = XLSX.SSF.parse_date_code(dateValue) as unknown as Date;
-            if (eventDate && typeof eventDate === "object" && "y" in eventDate) {
-              const d = eventDate as { y: number; m: number; d: number };
-              eventDate = new Date(d.y, d.m - 1, d.d);
+            // Excel serial date - XLSX.SSF.parse_date_code returns {y, m, d, ...} object
+            const parsedDate = XLSX.SSF.parse_date_code(dateValue) as unknown as { y: number; m: number; d: number } | null;
+            if (parsedDate && typeof parsedDate === "object" && "y" in parsedDate && "m" in parsedDate && "d" in parsedDate) {
+              eventDate = new Date(parsedDate.y, parsedDate.m - 1, parsedDate.d);
             }
           } else if (typeof dateValue === "string") {
             eventDate = new Date(dateValue);

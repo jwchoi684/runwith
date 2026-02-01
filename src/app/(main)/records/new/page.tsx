@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Cloud, Sun, CloudRain, Snowflake, ChevronDown, Trophy, MapPin, Search, Plus, X } from "lucide-react";
+import { ArrowLeft, Cloud, Sun, CloudRain, Snowflake, ChevronDown, Trophy, MapPin, Search, Plus, X, Calendar } from "lucide-react";
 import Link from "next/link";
 
 interface MarathonEvent {
@@ -52,6 +52,11 @@ export default function NewRecordPage() {
     distance: "42.195",
   });
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+
+  // 연도/월 필터 상태 (기본값: 현재 연도, 현재 월)
+  const currentDate = new Date();
+  const [selectedYear, setSelectedYear] = useState<number>(currentDate.getFullYear());
+  const [selectedMonth, setSelectedMonth] = useState<number | null>(currentDate.getMonth() + 1);
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split("T")[0],
@@ -108,11 +113,68 @@ export default function NewRecordPage() {
     }
   };
 
+  // 대회가 있는 연도 목록 추출
+  const availableYears = useMemo(() => {
+    const years = new Set(
+      events
+        .filter(e => e.date)
+        .map(e => new Date(e.date!).getFullYear())
+    );
+    return Array.from(years).sort((a, b) => b - a); // 최신 연도 먼저
+  }, [events]);
+
+  // 선택된 연도에서 대회가 있는 월 목록 추출
+  const availableMonths = useMemo(() => {
+    const months = new Set(
+      events
+        .filter(e => e.date && new Date(e.date).getFullYear() === selectedYear)
+        .map(e => new Date(e.date!).getMonth() + 1)
+    );
+    return Array.from(months).sort((a, b) => a - b);
+  }, [events, selectedYear]);
+
+  // 연도/월/검색어로 필터링된 대회 목록
+  const filteredEvents = useMemo(() => {
+    return events.filter(event => {
+      if (!event.date) return false;
+
+      const eventDate = new Date(event.date);
+      const matchesYear = eventDate.getFullYear() === selectedYear;
+      const matchesMonth = selectedMonth === null || eventDate.getMonth() + 1 === selectedMonth;
+      const matchesSearch = eventSearchQuery === "" ||
+        event.name.toLowerCase().includes(eventSearchQuery.toLowerCase()) ||
+        (event.location && event.location.toLowerCase().includes(eventSearchQuery.toLowerCase()));
+
+      return matchesYear && matchesMonth && matchesSearch;
+    }).sort((a, b) => {
+      // 날짜순 정렬
+      if (a.date && b.date) {
+        return new Date(a.date).getTime() - new Date(b.date).getTime();
+      }
+      return 0;
+    });
+  }, [events, selectedYear, selectedMonth, eventSearchQuery]);
+
+  // 연도 변경 시 해당 연도의 첫 번째 월로 자동 선택
+  useEffect(() => {
+    if (availableMonths.length > 0 && selectedMonth !== null) {
+      // 현재 선택된 월이 해당 연도에 없으면 첫 번째 월로 변경
+      if (!availableMonths.includes(selectedMonth)) {
+        setSelectedMonth(availableMonths[0]);
+      }
+    }
+  }, [selectedYear, availableMonths, selectedMonth]);
+
   const handleEventSelect = (event: MarathonEvent) => {
+    // 대회명과 날짜를 함께 표시
+    const displayName = event.date
+      ? `${event.name} (${new Date(event.date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })})`
+      : event.name;
+
     setFormData({
       ...formData,
       eventId: event.id,
-      eventName: event.name,
+      eventName: displayName,
       // 거리는 자동 설정하지 않음 - 사용자가 직접 선택 (풀/하프/10K 등)
       date: event.date || formData.date,
     });
@@ -152,13 +214,6 @@ export default function NewRecordPage() {
       setIsCreatingEvent(false);
     }
   };
-
-  const filteredEvents = events.filter(event => {
-    const matchesSearch = eventSearchQuery === "" ||
-      event.name.toLowerCase().includes(eventSearchQuery.toLowerCase()) ||
-      (event.location && event.location.toLowerCase().includes(eventSearchQuery.toLowerCase()));
-    return matchesSearch;
-  });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -356,38 +411,109 @@ export default function NewRecordPage() {
               </div>
 
               {showEventDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-xl shadow-lg z-10 max-h-64 overflow-y-auto">
-                  {filteredEvents.length === 0 ? (
-                    <div className="px-4 py-3 text-text-tertiary text-sm text-center">
-                      {eventSearchQuery ? "검색 결과가 없습니다" : "등록된 대회가 없습니다"}
-                    </div>
-                  ) : (
-                    filteredEvents.map((event) => (
+                <div className="absolute top-full left-0 right-0 mt-1 bg-surface border border-border rounded-xl shadow-lg z-10 max-h-[400px] overflow-hidden flex flex-col">
+                  {/* 연도 탭 */}
+                  <div className="flex gap-1.5 p-3 pb-2 overflow-x-auto scrollbar-hide border-b border-border flex-shrink-0">
+                    {availableYears.length > 0 ? (
+                      availableYears.map(year => (
+                        <button
+                          key={year}
+                          type="button"
+                          onClick={() => setSelectedYear(year)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                            selectedYear === year
+                              ? "bg-primary text-white"
+                              : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+                          }`}
+                        >
+                          {year}년
+                        </button>
+                      ))
+                    ) : (
+                      <span className="text-xs text-text-tertiary">등록된 대회가 없습니다</span>
+                    )}
+                  </div>
+
+                  {/* 월 탭 */}
+                  <div className="flex gap-1.5 p-3 pt-2 overflow-x-auto scrollbar-hide border-b border-border flex-shrink-0">
+                    <button
+                      type="button"
+                      onClick={() => setSelectedMonth(null)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                        selectedMonth === null
+                          ? "bg-primary text-white"
+                          : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+                      }`}
+                    >
+                      전체
+                    </button>
+                    {availableMonths.map(month => (
                       <button
-                        key={event.id}
+                        key={month}
                         type="button"
-                        onClick={() => handleEventSelect(event)}
-                        className={`w-full px-4 py-3 text-left hover:bg-surface-elevated flex items-center justify-between ${
-                          formData.eventId === event.id ? "bg-primary/10" : ""
+                        onClick={() => setSelectedMonth(month)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-all ${
+                          selectedMonth === month
+                            ? "bg-primary text-white"
+                            : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
                         }`}
                       >
-                        <div>
+                        {month}월
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 대회 목록 */}
+                  <div className="overflow-y-auto flex-1">
+                    {filteredEvents.length === 0 ? (
+                      <div className="px-4 py-6 text-text-tertiary text-sm text-center">
+                        <Calendar className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                        {eventSearchQuery
+                          ? "검색 결과가 없습니다"
+                          : selectedMonth
+                            ? `${selectedYear}년 ${selectedMonth}월에 대회가 없습니다`
+                            : "등록된 대회가 없습니다"
+                        }
+                      </div>
+                    ) : (
+                      filteredEvents.map((event) => (
+                        <button
+                          key={event.id}
+                          type="button"
+                          onClick={() => handleEventSelect(event)}
+                          className={`w-full px-4 py-3 text-left hover:bg-surface-elevated flex items-center justify-between border-b border-border/50 last:border-b-0 ${
+                            formData.eventId === event.id ? "bg-primary/10" : ""
+                          }`}
+                        >
+                          <div className="flex-1 min-w-0">
                           <p className={`font-medium ${formData.eventId === event.id ? "text-primary" : "text-text-primary"}`}>
                             {event.name}
                           </p>
-                          {event.location && (
-                            <p className="text-xs text-text-tertiary flex items-center gap-1 mt-0.5">
-                              <MapPin className="w-3 h-3" />
-                              {event.location}
-                            </p>
-                          )}
+                          <div className="flex items-center gap-2 mt-0.5">
+                            {event.date && (
+                              <p className="text-xs text-text-tertiary">
+                                {new Date(event.date).toLocaleDateString("ko-KR", {
+                                  year: "numeric",
+                                  month: "short",
+                                  day: "numeric",
+                                })}
+                              </p>
+                            )}
+                            {event.location && (
+                              <p className="text-xs text-text-tertiary flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {event.location}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <span className="text-xs text-text-secondary bg-surface-elevated px-2 py-1 rounded">
+                        <span className="text-xs text-text-secondary bg-surface-elevated px-2 py-1 rounded ml-2 flex-shrink-0">
                           {event.distance}km
                         </span>
                       </button>
-                    ))
-                  )}
+                      ))
+                    )}
+                  </div>
                 </div>
               )}
             </div>

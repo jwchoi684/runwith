@@ -8,7 +8,7 @@ export default function LoginPage() {
   const [showCopySuccess, setShowCopySuccess] = useState(false);
 
   useEffect(() => {
-    // 인앱 브라우저 감지
+    // 인앱 브라우저 감지 (Google 로그인 차단용)
     const ua = navigator.userAgent || navigator.vendor;
     const isInApp =
       /KAKAOTALK/i.test(ua) ||
@@ -23,10 +23,11 @@ export default function LoginPage() {
   }, []);
 
   const handleGoogleLogin = () => {
-    if (isInAppBrowser) {
-      return; // 인앱 브라우저에서는 로그인 차단
-    }
     signIn("google", { callbackUrl: "/" });
+  };
+
+  const handleKakaoLogin = () => {
+    signIn("kakao", { callbackUrl: "/" });
   };
 
   const handleCopyLink = async () => {
@@ -35,7 +36,6 @@ export default function LoginPage() {
       setShowCopySuccess(true);
       setTimeout(() => setShowCopySuccess(false), 2000);
     } catch (err) {
-      // Fallback for older browsers
       const textArea = document.createElement("textarea");
       textArea.value = window.location.origin;
       document.body.appendChild(textArea);
@@ -83,73 +83,48 @@ export default function LoginPage() {
             로그인
           </h2>
 
-          {/* 인앱 브라우저 경고 */}
-          {isInAppBrowser ? (
-            <div className="space-y-4">
-              <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-xl p-4">
-                <p className="text-yellow-400 font-medium text-sm mb-2">
-                  외부 브라우저에서 열어주세요
-                </p>
-                <p className="text-slate-400 text-xs leading-relaxed">
-                  카카오톡, 인스타그램 등의 인앱 브라우저에서는 Google 로그인이 제한됩니다.
-                </p>
-              </div>
+          <div className="space-y-3">
+            {/* Kakao Login - 인앱 브라우저에서도 가능 */}
+            <button
+              onClick={handleKakaoLogin}
+              className="w-full flex items-center justify-center gap-3 bg-[#FEE500] hover:bg-[#FDD800] text-[#191919] font-medium py-3 px-4 rounded-xl transition-all duration-200 hover:shadow-lg"
+            >
+              <svg className="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3c5.799 0 10.5 3.664 10.5 8.185 0 4.52-4.701 8.184-10.5 8.184a13.5 13.5 0 0 1-1.727-.11l-4.408 2.883c-.501.265-.678.236-.472-.413l.892-3.678c-2.88-1.46-4.785-3.99-4.785-6.866C1.5 6.665 6.201 3 12 3zm5.907 8.06l1.47-1.424a.472.472 0 0 0-.656-.678l-1.928 1.866V9.282a.472.472 0 0 0-.944 0v2.557a.471.471 0 0 0 0 .222V13.5a.472.472 0 0 0 .944 0v-1.363l.427-.413 1.428 2.033a.472.472 0 1 0 .773-.543l-1.514-2.155zm-2.958 1.924h-1.46V9.297a.472.472 0 0 0-.943 0v4.159c0 .26.21.472.471.472h1.932a.472.472 0 1 0 0-.944zm-5.857-1.092l.696-1.707.638 1.707H9.092zm2.523.488l.002-.016a.469.469 0 0 0-.127-.32l-1.545-4.287a.59.59 0 0 0-.559-.393.59.59 0 0 0-.559.393l-1.545 4.287a.472.472 0 0 0 .885.32l.347-.926h1.912l.347.926c.078.21.274.341.49.341a.472.472 0 0 0 .352-.325zm-6.876.604h1.778a.472.472 0 1 0 0-.944H6.79V9.282a.472.472 0 0 0-.944 0v4.187c0 .26.21.472.472.472h.012z" />
+              </svg>
+              카카오로 계속하기
+            </button>
 
+            {/* Google Login */}
+            {isInAppBrowser ? (
               <div className="space-y-3">
-                <p className="text-slate-300 text-sm text-center">
-                  아래 방법 중 하나를 선택하세요:
-                </p>
-
-                {/* 링크 복사 버튼 */}
+                <div className="bg-slate-700/30 border border-slate-600/30 rounded-xl p-3">
+                  <p className="text-slate-400 text-xs text-center">
+                    Google 로그인은 외부 브라우저에서만 가능합니다
+                  </p>
+                </div>
                 <button
                   onClick={handleCopyLink}
-                  className="w-full flex items-center justify-center gap-2 bg-primary hover:bg-primary/90 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200"
+                  className="w-full flex items-center justify-center gap-2 bg-slate-700 hover:bg-slate-600 text-white font-medium py-3 px-4 rounded-xl transition-all duration-200"
                 >
                   {showCopySuccess ? (
                     <>
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                       </svg>
-                      복사됨!
+                      링크 복사됨!
                     </>
                   ) : (
                     <>
                       <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      링크 복사하기
+                      외부 브라우저로 열기 (링크 복사)
                     </>
                   )}
                 </button>
-
-                <p className="text-slate-500 text-xs text-center">
-                  복사한 링크를 Chrome 또는 Safari에 붙여넣기 하세요
-                </p>
               </div>
-
-              <div className="relative">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-slate-700"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-slate-800/50 text-slate-500">또는</span>
-                </div>
-              </div>
-
-              <div className="bg-slate-700/30 rounded-xl p-4">
-                <p className="text-slate-300 text-sm font-medium mb-2">
-                  우측 상단 메뉴에서:
-                </p>
-                <ul className="text-slate-400 text-xs space-y-1">
-                  <li>• 카카오톡: ⋮ → 다른 브라우저로 열기</li>
-                  <li>• 인스타그램: ⋮ → 브라우저에서 열기</li>
-                  <li>• 기타: 외부 브라우저로 열기</li>
-                </ul>
-              </div>
-            </div>
-          ) : (
-            <>
-              {/* Google Login */}
+            ) : (
               <button
                 onClick={handleGoogleLogin}
                 className="w-full flex items-center justify-center gap-3 bg-white hover:bg-gray-100 text-gray-800 font-medium py-3 px-4 rounded-xl transition-all duration-200 hover:shadow-lg"
@@ -174,13 +149,13 @@ export default function LoginPage() {
                 </svg>
                 Google로 계속하기
               </button>
+            )}
+          </div>
 
-              {/* Footer */}
-              <p className="text-center text-slate-400 text-sm mt-6">
-                Google 계정으로 간편하게 시작하세요
-              </p>
-            </>
-          )}
+          {/* Footer */}
+          <p className="text-center text-slate-400 text-sm mt-6">
+            간편하게 로그인하고 시작하세요
+          </p>
         </div>
       </div>
     </div>

@@ -45,7 +45,7 @@ export default function EventsPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "my">("all");
-  const [showPast, setShowPast] = useState(false);
+  const [selectedYear, setSelectedYear] = useState<number>(new Date().getFullYear());
 
   useEffect(() => {
     fetchData();
@@ -142,57 +142,46 @@ export default function EventsPage() {
     window.location.href = `/records/new?eventId=${eventId}`;
   };
 
-  // 오늘 날짜 (날짜만 비교하기 위해 YYYY-MM-DD 형식으로)
-  const todayStr = useMemo(() => {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-  }, []);
-
   // 이벤트 날짜를 YYYY-MM-DD 형식으로 변환 (타임존 무관하게 날짜만 추출)
   const getEventDateStr = (dateStr: string) => {
     // ISO 형식에서 날짜 부분만 추출 (예: "2025-01-15T00:00:00.000Z" -> "2025-01-15")
     return dateStr.split('T')[0];
   };
 
-  // 예정 대회 (오늘 이후) - 연도 필터 없이 모든 미래 대회 표시
-  const upcomingEvents = useMemo(() => {
+  // 이벤트에서 연도 추출
+  const getEventYear = (dateStr: string) => {
+    return parseInt(dateStr.split('-')[0], 10);
+  };
+
+  // 사용 가능한 연도 목록 (이벤트에 있는 연도들)
+  const availableYears = useMemo(() => {
+    const years = new Set<number>();
+    events.forEach((event) => {
+      if (event.date) {
+        years.add(getEventYear(event.date));
+      }
+    });
+    return Array.from(years).sort((a, b) => b - a); // 최신 연도순
+  }, [events]);
+
+  // 선택된 연도의 대회를 날짜순으로 정렬
+  const displayEvents = useMemo(() => {
     return events
       .filter((event) => {
         if (!event.date) return false;
-        const eventDateStr = getEventDateStr(event.date);
-        return eventDateStr >= todayStr;
+        return getEventYear(event.date) === selectedYear;
       })
       .sort((a, b) => getEventDateStr(a.date!).localeCompare(getEventDateStr(b.date!)));
-  }, [events, todayStr]);
+  }, [events, selectedYear]);
 
-  // 지난 대회 (오늘 이전) - 연도 필터 없이 모든 과거 대회 표시
-  const pastEvents = useMemo(() => {
-    return events
-      .filter((event) => {
-        if (!event.date) return false;
-        const eventDateStr = getEventDateStr(event.date);
-        return eventDateStr < todayStr;
-      })
-      .sort((a, b) => getEventDateStr(b.date!).localeCompare(getEventDateStr(a.date!))); // 최신순
-  }, [events, todayStr]);
-
-  // 현재 표시할 대회 목록
-  const displayEvents = useMemo(() => {
-    return showPast ? pastEvents : upcomingEvents;
-  }, [showPast, pastEvents, upcomingEvents]);
-
-  // 내 대회 필터링
-  const myUpcomingEvents = useMemo(() => {
+  // 내 대회 필터링 (모든 내 대회를 날짜순으로)
+  const myEvents = useMemo(() => {
     return userEvents
-      .filter((ue) => {
-        if (!ue.event.date) return false;
-        const eventDateStr = getEventDateStr(ue.event.date);
-        return eventDateStr >= todayStr;
-      })
+      .filter((ue) => ue.event.date)
       .sort((a, b) => {
         return getEventDateStr(a.event.date!).localeCompare(getEventDateStr(b.event.date!));
       });
-  }, [userEvents, todayStr]);
+  }, [userEvents]);
 
   // 1월부터 12월까지 모든 월 목록
   const allMonths = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
@@ -371,43 +360,32 @@ export default function EventsPage() {
     <div className="p-4 space-y-4">
       {/* Header */}
       <header className="pt-2">
-        <h1 className="text-2xl font-bold text-text-primary">
-          대회 일정
-        </h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-text-primary">
+            대회 일정
+          </h1>
+          {/* Year Selector */}
+          {availableYears.length > 1 && (
+            <select
+              value={selectedYear}
+              onChange={(e) => {
+                setSelectedYear(parseInt(e.target.value, 10));
+                setSelectedMonth(null);
+              }}
+              className="bg-surface-elevated text-text-primary px-3 py-1.5 rounded-lg text-sm font-medium border border-border focus:outline-none focus:ring-2 focus:ring-primary"
+            >
+              {availableYears.map((year) => (
+                <option key={year} value={year}>
+                  {year}년
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
         <p className="text-sm text-text-tertiary mt-1">
-          {showPast ? "지난 마라톤 대회" : "앞으로 있는 마라톤 대회"}
+          {selectedYear}년 마라톤 대회 일정
         </p>
       </header>
-
-      {/* 예정/지난 대회 토글 */}
-      <div className="flex gap-2 bg-surface-elevated p-1 rounded-lg">
-        <button
-          onClick={() => {
-            setShowPast(false);
-            setSelectedMonth(null);
-          }}
-          className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
-            !showPast
-              ? "bg-primary text-white"
-              : "text-text-secondary hover:text-text-primary"
-          }`}
-        >
-          예정 대회 ({upcomingEvents.length})
-        </button>
-        <button
-          onClick={() => {
-            setShowPast(true);
-            setSelectedMonth(null);
-          }}
-          className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
-            showPast
-              ? "bg-primary text-white"
-              : "text-text-secondary hover:text-text-primary"
-          }`}
-        >
-          지난 대회 ({pastEvents.length})
-        </button>
-      </div>
 
       {/* Tab Navigation */}
       {isLoggedIn && (
@@ -431,7 +409,7 @@ export default function EventsPage() {
             }`}
           >
             <Star className="w-4 h-4" />
-            내 대회 ({myUpcomingEvents.length})
+            내 대회 ({myEvents.length})
           </button>
         </div>
       )}
@@ -482,20 +460,9 @@ export default function EventsPage() {
               <Calendar className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
               <p className="text-text-secondary">
                 {selectedMonth
-                  ? `${selectedMonth}월에 ${showPast ? "지난" : "예정된"} 대회가 없습니다`
-                  : `${showPast ? "지난" : "예정된"} 대회가 없습니다`}
+                  ? `${selectedMonth}월에 대회가 없습니다`
+                  : "등록된 대회가 없습니다"}
               </p>
-              {!showPast && pastEvents.length > 0 && (
-                <button
-                  onClick={() => {
-                    setShowPast(true);
-                    setSelectedMonth(null);
-                  }}
-                  className="text-primary text-sm mt-2 hover:underline"
-                >
-                  지난 대회 보기 ({pastEvents.length}개)
-                </button>
-              )}
             </Card>
           ) : (
             <div className="space-y-6">
@@ -520,7 +487,7 @@ export default function EventsPage() {
       {/* My Events Tab */}
       {activeTab === "my" && (
         <>
-          {myUpcomingEvents.length === 0 ? (
+          {myEvents.length === 0 ? (
             <Card className="text-center py-12">
               <Star className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
               <p className="text-text-secondary">참가 확정한 대회가 없습니다</p>
@@ -530,7 +497,7 @@ export default function EventsPage() {
             </Card>
           ) : (
             <div className="bg-surface rounded-2xl overflow-hidden divide-y divide-border">
-              {myUpcomingEvents.map((userEvent) =>
+              {myEvents.map((userEvent) =>
                 renderEventCard(userEvent.event, userEvent)
               )}
             </div>

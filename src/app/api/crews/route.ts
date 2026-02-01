@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 // GET /api/crews - Get all crews (public) or user's crews
 export async function GET(request: NextRequest) {
@@ -91,12 +92,18 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Name is required" }, { status: 400 });
   }
 
+  // Hash password if provided
+  let hashedPassword = null;
+  if (password?.trim()) {
+    hashedPassword = await bcrypt.hash(password.trim(), 10);
+  }
+
   const crew = await prisma.crew.create({
     data: {
       name,
       description,
       isPublic,
-      password: password?.trim() || null,
+      password: hashedPassword,
       ownerId: session.user.id,
       members: {
         create: {

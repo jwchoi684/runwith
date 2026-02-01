@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 type Params = Promise<{ id: string }>;
 
@@ -25,7 +26,12 @@ export async function POST(request: NextRequest, { params }: { params: Params })
       const body = await request.json();
       const { password } = body;
 
-      if (!password || password !== crew.password) {
+      if (!password) {
+        return NextResponse.json({ error: "비밀번호가 필요합니다" }, { status: 403 });
+      }
+
+      const isPasswordValid = await bcrypt.compare(password, crew.password);
+      if (!isPasswordValid) {
         return NextResponse.json({ error: "비밀번호가 일치하지 않습니다" }, { status: 403 });
       }
     } catch {

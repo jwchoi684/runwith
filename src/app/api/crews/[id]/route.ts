@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 type Params = Promise<{ id: string }>;
 
@@ -49,13 +50,19 @@ export async function PUT(request: NextRequest, { params }: { params: Params }) 
   const body = await request.json();
   const { name, description, isPublic, password } = body;
 
+  // Hash password if provided and changed
+  let hashedPassword = undefined;
+  if (password !== undefined) {
+    hashedPassword = password?.trim() ? await bcrypt.hash(password.trim(), 10) : null;
+  }
+
   const crew = await prisma.crew.update({
     where: { id },
     data: {
       name,
       description,
       isPublic,
-      password: password !== undefined ? (password?.trim() || null) : undefined,
+      password: hashedPassword,
     },
   });
 

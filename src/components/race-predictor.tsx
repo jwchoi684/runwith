@@ -23,10 +23,15 @@ interface RacePredictorProps {
 
 export function RacePredictor({ paceGroups }: RacePredictorProps) {
   const [selectedDistance, setSelectedDistance] = useState<DistanceKey>("10K");
-  const [hours, setHours] = useState(0);
-  const [minutes, setMinutes] = useState(50);
-  const [seconds, setSeconds] = useState(0);
+  const [hoursStr, setHoursStr] = useState("0");
+  const [minutesStr, setMinutesStr] = useState("50");
+  const [secondsStr, setSecondsStr] = useState("0");
   const [showResults, setShowResults] = useState(false);
+
+  // Convert string values to numbers for calculations
+  const hours = parseInt(hoursStr) || 0;
+  const minutes = parseInt(minutesStr) || 0;
+  const seconds = parseInt(secondsStr) || 0;
 
   // Calculate predictions
   const predictions = useMemo(() => {
@@ -113,10 +118,16 @@ export function RacePredictor({ paceGroups }: RacePredictorProps) {
                 type="number"
                 min="0"
                 max="23"
-                value={hours}
+                value={hoursStr}
                 onChange={(e) => {
-                  setHours(Math.max(0, parseInt(e.target.value) || 0));
-                  setShowResults(false);
+                  const val = e.target.value;
+                  if (val === "" || (parseInt(val) >= 0 && parseInt(val) <= 23)) {
+                    setHoursStr(val);
+                    setShowResults(false);
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === "") setHoursStr("0");
                 }}
                 className="w-16 px-3 py-2 rounded-lg bg-surface-elevated border border-border text-center text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -127,10 +138,16 @@ export function RacePredictor({ paceGroups }: RacePredictorProps) {
                 type="number"
                 min="0"
                 max="59"
-                value={minutes}
+                value={minutesStr}
                 onChange={(e) => {
-                  setMinutes(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)));
-                  setShowResults(false);
+                  const val = e.target.value;
+                  if (val === "" || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+                    setMinutesStr(val);
+                    setShowResults(false);
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === "") setMinutesStr("0");
                 }}
                 className="w-16 px-3 py-2 rounded-lg bg-surface-elevated border border-border text-center text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -141,10 +158,16 @@ export function RacePredictor({ paceGroups }: RacePredictorProps) {
                 type="number"
                 min="0"
                 max="59"
-                value={seconds}
+                value={secondsStr}
                 onChange={(e) => {
-                  setSeconds(Math.max(0, Math.min(59, parseInt(e.target.value) || 0)));
-                  setShowResults(false);
+                  const val = e.target.value;
+                  if (val === "" || (parseInt(val) >= 0 && parseInt(val) <= 59)) {
+                    setSecondsStr(val);
+                    setShowResults(false);
+                  }
+                }}
+                onBlur={(e) => {
+                  if (e.target.value === "") setSecondsStr("0");
                 }}
                 className="w-16 px-3 py-2 rounded-lg bg-surface-elevated border border-border text-center text-text-primary focus:outline-none focus:ring-2 focus:ring-primary"
               />

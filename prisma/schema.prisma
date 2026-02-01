@@ -51,6 +51,7 @@ model User {
   runningLogs   RunningLog[]
   crews         CrewMember[]
   ownedCrews    Crew[]
+  accessLogs    AccessLog[]
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 }
@@ -140,4 +141,18 @@ model CrewMember {
   joinedAt  DateTime @default(now())
 
   @@unique([userId, crewId])
+}
+
+model AccessLog {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String   // "login", "logout", "page_view"
+  ipAddress String?
+  userAgent String?
+  path      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
 }

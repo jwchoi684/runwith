@@ -38,6 +38,7 @@ import {
   Check,
   Gauge,
   RefreshCw,
+  History,
 } from "lucide-react";
 
 interface User {
@@ -144,6 +145,22 @@ interface CrewMemberMapping {
   crewId: string;
 }
 
+interface AccessLog {
+  id: string;
+  userId: string;
+  action: string;
+  ipAddress: string | null;
+  userAgent: string | null;
+  path: string | null;
+  createdAt: Date;
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+  };
+}
+
 interface Stats {
   totalUsers: number;
   totalRecords: number;
@@ -178,10 +195,11 @@ interface AdminDashboardProps {
   rankings: Ranking[];
   crewMembers: CrewMemberMapping[];
   paceGroups: PaceGroup[];
+  accessLogs: AccessLog[];
   currentUserId: string;
 }
 
-type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "user-detail" | "crew-detail";
+type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "access-logs" | "user-detail" | "crew-detail";
 
 const coursePresets = ["Full", "Half", "10K", "5K"];
 
@@ -199,6 +217,7 @@ export function AdminDashboard({
   rankings,
   crewMembers,
   paceGroups,
+  accessLogs,
   currentUserId,
 }: AdminDashboardProps) {
   const router = useRouter();
@@ -791,6 +810,7 @@ export function AdminDashboard({
     { id: "events" as View, label: "대회 관리", icon: Trophy },
     { id: "pace-groups" as View, label: "페이스 차트", icon: Gauge },
     { id: "rankings" as View, label: "Ranking", icon: BarChart3 },
+    { id: "access-logs" as View, label: "접속 로그", icon: History },
   ];
 
   return (
@@ -2428,6 +2448,103 @@ export function AdminDashboard({
                   <li>• <span className="text-primary font-medium">Recovery</span>: 회복 조깅 페이스</li>
                 </ul>
               </Card>
+            </div>
+          )}
+
+          {/* Access Logs View */}
+          {activeView === "access-logs" && (
+            <div className="space-y-4">
+              {accessLogs.length === 0 ? (
+                <Card className="text-center py-12">
+                  <History className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+                  <p className="text-text-secondary">접속 기록이 없습니다</p>
+                </Card>
+              ) : (
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {accessLogs.map((log) => (
+                      <Card key={log.id} className="p-4">
+                        <div className="flex items-center gap-3 mb-3">
+                          {log.user.image ? (
+                            <Image src={log.user.image} alt="" width={40} height={40} className="rounded-full" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                              {log.user.name?.[0]?.toUpperCase() || "U"}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-text-primary truncate">{log.user.name || log.user.email}</p>
+                            <p className="text-xs text-text-tertiary">{log.user.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between text-sm">
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                            log.action === "login" ? "bg-success/10 text-success" :
+                            log.action === "logout" ? "bg-warning/10 text-warning" :
+                            "bg-primary/10 text-primary"
+                          }`}>
+                            {log.action === "login" ? "로그인" : log.action === "logout" ? "로그아웃" : log.action}
+                          </span>
+                          <span className="text-text-tertiary">{formatRelativeTime(new Date(log.createdAt))}</span>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[600px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">사용자</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">액션</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">시간</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">IP 주소</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {accessLogs.map((log) => (
+                            <tr
+                              key={log.id}
+                              onClick={() => openUserDetail(log.user.id)}
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                            >
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  {log.user.image ? (
+                                    <Image src={log.user.image} alt="" width={36} height={36} className="rounded-full" />
+                                  ) : (
+                                    <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                                      {log.user.name?.[0]?.toUpperCase() || "U"}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="font-medium text-text-primary">{log.user.name || "Unknown"}</span>
+                                    <p className="text-xs text-text-tertiary">{log.user.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  log.action === "login" ? "bg-success/10 text-success" :
+                                  log.action === "logout" ? "bg-warning/10 text-warning" :
+                                  "bg-primary/10 text-primary"
+                                }`}>
+                                  {log.action === "login" ? "로그인" : log.action === "logout" ? "로그아웃" : log.action}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-secondary">{formatRelativeTime(new Date(log.createdAt))}</td>
+                              <td className="px-4 py-3 text-sm text-text-tertiary font-mono hidden lg:table-cell">{log.ipAddress || "-"}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
+              )}
             </div>
           )}
 

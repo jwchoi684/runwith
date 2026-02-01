@@ -153,6 +153,22 @@ export default async function AdminPage() {
     orderBy: { groupNumber: "asc" },
   });
 
+  // Fetch access logs (최근 100개)
+  const accessLogs = await prisma.accessLog.findMany({
+    take: 100,
+    orderBy: { createdAt: "desc" },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          image: true,
+        },
+      },
+    },
+  });
+
   return (
     <AdminDashboard
       users={users}
@@ -163,6 +179,7 @@ export default async function AdminPage() {
       rankings={rankings}
       crewMembers={crewMembers}
       paceGroups={paceGroups}
+      accessLogs={accessLogs}
       currentUserId={session.user.id}
     />
   );

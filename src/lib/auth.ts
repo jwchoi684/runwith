@@ -95,12 +95,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       // The user will be redirected to onboarding page
     },
     async signIn({ user }) {
-      // Update last accessed time on sign in
+      // Update last accessed time on sign in and create access log
       if (user.id) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { lastAccessedAt: new Date() },
-        });
+        await prisma.$transaction([
+          prisma.user.update({
+            where: { id: user.id },
+            data: { lastAccessedAt: new Date() },
+          }),
+          prisma.accessLog.create({
+            data: {
+              userId: user.id,
+              action: "login",
+            },
+          }),
+        ]);
       }
     },
   },

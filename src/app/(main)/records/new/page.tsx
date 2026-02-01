@@ -104,7 +104,7 @@ export default function NewRecordPage() {
       ...formData,
       eventId: event.id,
       eventName: event.name,
-      distance: event.distance.toString(),
+      // 거리는 자동 설정하지 않음 - 사용자가 직접 선택 (풀/하프/10K 등)
       date: event.date || formData.date,
     });
     setShowEventDropdown(false);
@@ -416,70 +416,63 @@ export default function NewRecordPage() {
           </Card>
         )}
 
-        {/* Distance - Hidden if event is selected */}
-        {!isRaceRecord && (
-          <Card>
-            <label className="block">
-              <span className="text-sm font-medium text-text-secondary">거리</span>
-              <div className="flex gap-2 mt-2 mb-3">
-                {[
-                  { label: "10K", value: "10" },
-                  { label: "Half", value: "21.0975" },
-                  { label: "Full", value: "42.195" },
-                ].map((preset) => (
-                  <button
-                    key={preset.label}
-                    type="button"
-                    onClick={() =>
-                      setFormData({ ...formData, distance: preset.value })
-                    }
-                    className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
-                      formData.distance === preset.value
-                        ? "bg-primary/10 border-primary text-primary"
-                        : "bg-surface-elevated border-border text-text-secondary hover:border-text-secondary"
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                ))}
-              </div>
-              <div className="flex items-center gap-2">
-                <input
-                  type="number"
-                  step="0.001"
-                  min="0"
-                  value={formData.distance}
-                  onChange={(e) =>
-                    setFormData({ ...formData, distance: e.target.value })
+        {/* Distance */}
+        <Card>
+          <label className="block">
+            <span className="text-sm font-medium text-text-secondary">거리</span>
+            <div className="flex gap-2 mt-2 mb-3">
+              {[
+                { label: "5K", value: "5" },
+                { label: "10K", value: "10" },
+                { label: "Half", value: "21.0975" },
+                { label: "Full", value: "42.195" },
+              ].map((preset) => (
+                <button
+                  key={preset.label}
+                  type="button"
+                  onClick={() =>
+                    setFormData({ ...formData, distance: preset.value })
                   }
-                  placeholder="0.000"
-                  className="flex-1 bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary text-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary"
-                  required
-                />
-                <span className="text-lg text-text-secondary font-medium">km</span>
-              </div>
-            </label>
-          </Card>
-        )}
+                  className={`flex-1 py-2 px-3 rounded-lg border text-sm font-medium transition-all ${
+                    formData.distance === preset.value
+                      ? "bg-primary/10 border-primary text-primary"
+                      : "bg-surface-elevated border-border text-text-secondary hover:border-text-secondary"
+                  }`}
+                >
+                  {preset.label}
+                </button>
+              ))}
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                step="0.001"
+                min="0"
+                value={formData.distance}
+                onChange={(e) =>
+                  setFormData({ ...formData, distance: e.target.value })
+                }
+                placeholder="0.000"
+                className="flex-1 bg-surface-elevated border border-border rounded-lg px-4 py-3 text-text-primary text-xl font-bold focus:outline-none focus:ring-2 focus:ring-primary"
+                required
+              />
+              <span className="text-lg text-text-secondary font-medium">km</span>
+            </div>
+          </label>
+        </Card>
 
         {/* Show selected event info for race record */}
         {isRaceRecord && formData.eventId && (
-          <Card>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-text-secondary">대회 날짜</span>
-                <span className="text-base font-medium text-text-primary">
-                  {new Date(formData.date).toLocaleDateString("ko-KR", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  })}
-                </span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-text-secondary">거리</span>
-                <span className="text-xl font-bold text-primary">{formData.distance} km</span>
-              </div>
+          <Card className="bg-primary/5 border border-primary/20">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium text-text-secondary">대회 날짜</span>
+              <span className="text-base font-medium text-text-primary">
+                {new Date(formData.date).toLocaleDateString("ko-KR", {
+                  year: "numeric",
+                  month: "long",
+                  day: "numeric",
+                })}
+              </span>
             </div>
           </Card>
         )}

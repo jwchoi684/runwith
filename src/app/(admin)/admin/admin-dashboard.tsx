@@ -1585,8 +1585,9 @@ export function AdminDashboard({
                     <Activity className="w-5 h-5 text-success" />
                     DAU 추이 (최근 30일)
                   </h2>
-                  <Card className="p-4 h-56">
-                    <div className="flex items-end justify-between h-36 gap-0.5">
+                  <Card className="p-4">
+                    {/* Chart Area */}
+                    <div className="flex items-end gap-[2px] h-32 mb-2">
                       {dauTrend.map((day, index) => {
                         const maxCount = Math.max(...dauTrend.map(d => d.count), 1);
                         const height = (day.count / maxCount) * 100;
@@ -1594,21 +1595,33 @@ export function AdminDashboard({
                         return (
                           <div
                             key={day.date}
-                            className="flex-1 flex flex-col items-center"
+                            className="flex-1 group relative cursor-pointer"
                             title={`${day.date}: ${day.count}명`}
                           >
                             <div
-                              className={`w-full rounded-t transition-all ${isToday ? "bg-success" : "bg-success/40"}`}
-                              style={{ height: `${Math.max(height, 2)}%` }}
+                              className={`w-full rounded-sm transition-all hover:opacity-80 ${isToday ? "bg-success" : "bg-success/50"}`}
+                              style={{ height: `${Math.max(height, 4)}%` }}
                             />
+                            {/* Tooltip on hover */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10">
+                              <div className="bg-surface-elevated px-2 py-1 rounded text-[10px] text-text-primary whitespace-nowrap shadow-lg border border-border">
+                                {day.count}명
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
                     </div>
-                    <div className="flex justify-between mt-3 text-xs text-text-tertiary">
+                    {/* X-axis Labels */}
+                    <div className="flex justify-between text-[10px] text-text-tertiary border-t border-border pt-2">
                       <span>{dauTrend[0]?.date.slice(5)}</span>
-                      <span className="font-medium text-success">오늘: {dauTrend[dauTrend.length - 1]?.count || 0}명</span>
-                      <span>{dauTrend[dauTrend.length - 1]?.date.slice(5)}</span>
+                      <span>{dauTrend[9]?.date.slice(5)}</span>
+                      <span>{dauTrend[19]?.date.slice(5)}</span>
+                      <span>{dauTrend[29]?.date.slice(5)}</span>
+                    </div>
+                    {/* Summary */}
+                    <div className="flex justify-center mt-2">
+                      <span className="text-sm font-medium text-success">오늘: {dauTrend[dauTrend.length - 1]?.count || 0}명</span>
                     </div>
                   </Card>
                 </section>
@@ -1619,8 +1632,9 @@ export function AdminDashboard({
                     <TrendingUp className="w-5 h-5 text-primary" />
                     MAU 추이 (최근 12개월)
                   </h2>
-                  <Card className="p-4 h-56">
-                    <div className="flex items-end justify-between h-36 gap-1">
+                  <Card className="p-4">
+                    {/* Chart Area */}
+                    <div className="flex items-end gap-1 h-32 mb-2">
                       {mauTrend.map((month, index) => {
                         const maxCount = Math.max(...mauTrend.map(m => m.count), 1);
                         const height = (month.count / maxCount) * 100;
@@ -1628,18 +1642,32 @@ export function AdminDashboard({
                         return (
                           <div
                             key={month.month}
-                            className="flex-1 flex flex-col items-center gap-1"
+                            className="flex-1 group relative cursor-pointer"
                             title={`${month.month}: ${month.count}명`}
                           >
-                            <span className="text-[10px] text-text-tertiary font-medium">{month.count}</span>
                             <div
-                              className={`w-full rounded-t transition-all ${isCurrentMonth ? "bg-primary" : "bg-primary/40"}`}
+                              className={`w-full rounded-sm transition-all hover:opacity-80 ${isCurrentMonth ? "bg-primary" : "bg-primary/50"}`}
                               style={{ height: `${Math.max(height, 4)}%` }}
                             />
-                            <span className="text-[10px] text-text-tertiary">{month.label}</span>
+                            {/* Tooltip on hover */}
+                            <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-1 hidden group-hover:block z-10">
+                              <div className="bg-surface-elevated px-2 py-1 rounded text-[10px] text-text-primary whitespace-nowrap shadow-lg border border-border">
+                                {month.count}명
+                              </div>
+                            </div>
                           </div>
                         );
                       })}
+                    </div>
+                    {/* X-axis Labels */}
+                    <div className="flex justify-between text-[10px] text-text-tertiary border-t border-border pt-2">
+                      {mauTrend.map((month) => (
+                        <span key={month.month} className="flex-1 text-center">{month.label}</span>
+                      ))}
+                    </div>
+                    {/* Summary */}
+                    <div className="flex justify-center mt-2">
+                      <span className="text-sm font-medium text-primary">이번 달: {mauTrend[mauTrend.length - 1]?.count || 0}명</span>
                     </div>
                   </Card>
                 </section>

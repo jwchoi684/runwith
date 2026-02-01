@@ -1651,29 +1651,78 @@ export function AdminDashboard({
                   <Globe className="w-5 h-5 text-primary" />
                   인기 페이지 (조회수)
                 </h2>
-                <Card className="divide-y divide-border">
+                <Card className="p-4">
                   {pageStats.length === 0 ? (
-                    <div className="p-4 text-center text-text-tertiary">데이터가 없습니다</div>
+                    <div className="text-center text-text-tertiary py-4">데이터가 없습니다</div>
                   ) : (
-                    pageStats.slice(0, 10).map((stat, index) => (
-                      <div key={stat.path} className="flex items-center gap-3 p-4">
-                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                          index === 0 ? "bg-yellow-500/20 text-yellow-500" :
-                          index === 1 ? "bg-gray-300/20 text-gray-400" :
-                          index === 2 ? "bg-orange-500/20 text-orange-500" :
-                          "bg-surface-elevated text-text-tertiary"
-                        }`}>
-                          {index + 1}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-text-primary truncate">{stat.path}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-primary">{stat.count.toLocaleString()}</p>
-                          <p className="text-xs text-text-tertiary">조회</p>
-                        </div>
-                      </div>
-                    ))
+                    <div className="space-y-3">
+                      {(() => {
+                        const maxCount = Math.max(...pageStats.slice(0, 10).map(s => s.count));
+                        return pageStats.slice(0, 10).map((stat, index) => {
+                          const percentage = (stat.count / maxCount) * 100;
+                          const getPageIcon = (path: string) => {
+                            if (path === "/" || path === "/home") return "🏠";
+                            if (path.includes("/records")) return "📊";
+                            if (path.includes("/crews")) return "👥";
+                            if (path.includes("/events")) return "🏃";
+                            if (path.includes("/profile")) return "👤";
+                            if (path.includes("/pace")) return "⏱️";
+                            if (path.includes("/ranking")) return "🏆";
+                            if (path.includes("/login")) return "🔑";
+                            return "📄";
+                          };
+                          const getPageName = (path: string) => {
+                            if (path === "/") return "홈";
+                            if (path === "/records") return "기록";
+                            if (path === "/crews") return "크루";
+                            if (path === "/events") return "대회 일정";
+                            if (path === "/profile") return "프로필";
+                            if (path === "/pace-chart") return "페이스 차트";
+                            if (path === "/ranking") return "랭킹";
+                            if (path === "/login") return "로그인";
+                            return path;
+                          };
+                          return (
+                            <div key={stat.path} className="group">
+                              <div className="flex items-center gap-3 mb-1.5">
+                                {/* Rank Badge */}
+                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                  index === 0 ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg shadow-yellow-500/30" :
+                                  index === 1 ? "bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-lg shadow-gray-400/30" :
+                                  index === 2 ? "bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-500/30" :
+                                  "bg-surface-elevated text-text-tertiary"
+                                }`}>
+                                  {index + 1}
+                                </div>
+                                {/* Page Icon & Name */}
+                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                                  <span className="text-base">{getPageIcon(stat.path)}</span>
+                                  <span className="font-medium text-text-primary truncate">{getPageName(stat.path)}</span>
+                                  <span className="text-xs text-text-tertiary truncate hidden sm:inline">({stat.path})</span>
+                                </div>
+                                {/* Count */}
+                                <div className="text-right shrink-0">
+                                  <span className="font-bold text-primary">{stat.count.toLocaleString()}</span>
+                                  <span className="text-xs text-text-tertiary ml-1">회</span>
+                                </div>
+                              </div>
+                              {/* Progress Bar */}
+                              <div className="ml-10 h-2 bg-surface-elevated rounded-full overflow-hidden">
+                                <div
+                                  className={`h-full rounded-full transition-all duration-500 ${
+                                    index === 0 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" :
+                                    index === 1 ? "bg-gradient-to-r from-gray-400 to-gray-500" :
+                                    index === 2 ? "bg-gradient-to-r from-orange-400 to-orange-500" :
+                                    "bg-primary/60"
+                                  }`}
+                                  style={{ width: `${percentage}%` }}
+                                />
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+                    </div>
                   )}
                 </Card>
               </section>

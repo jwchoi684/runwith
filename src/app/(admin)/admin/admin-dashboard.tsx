@@ -232,7 +232,7 @@ interface AdminDashboardProps {
   currentUserId: string;
 }
 
-type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "access-logs" | "api-logs" | "user-detail" | "crew-detail";
+type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "access-logs" | "user-detail" | "crew-detail";
 
 const coursePresets = ["Full", "Half", "10K", "5K"];
 
@@ -282,6 +282,10 @@ export function AdminDashboard({
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
   const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
   const [isDeletingBulk, setIsDeletingBulk] = useState(false);
+
+  // Event filter state
+  const [eventFilterYear, setEventFilterYear] = useState<number | null>(null);
+  const [eventFilterMonth, setEventFilterMonth] = useState<number | null>(null);
 
   // Import events state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -887,11 +891,27 @@ export function AdminDashboard({
       crew.owner.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredEvents = events.filter(
-    (event) =>
+  const filteredEvents = events.filter((event) => {
+    // 검색어 필터
+    const matchesSearch =
       event.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      event.location?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+      event.location?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    // 연도 필터
+    const matchesYear =
+      eventFilterYear === null ||
+      (event.date && new Date(event.date).getFullYear() === eventFilterYear);
+
+    // 월 필터
+    const matchesMonth =
+      eventFilterMonth === null ||
+      (event.date && new Date(event.date).getMonth() + 1 === eventFilterMonth);
+
+    return matchesSearch && matchesYear && matchesMonth;
+  });
+
+  // 대회 연도 목록 (필터용)
+  const eventYears = [...new Set(events.map((e) => e.date ? new Date(e.date).getFullYear() : null).filter((y): y is number => y !== null))].sort((a, b) => b - a);
 
   const openUserDetail = (userId: string) => {
     setSelectedUserId(userId);
@@ -920,7 +940,6 @@ export function AdminDashboard({
     { id: "pace-groups" as View, label: "페이스 차트", icon: Gauge },
     { id: "rankings" as View, label: "Ranking", icon: BarChart3 },
     { id: "access-logs" as View, label: "접속 로그", icon: History },
-    { id: "api-logs" as View, label: "API 로그", icon: Activity },
   ];
 
   return (
@@ -2092,8 +2111,10 @@ export function AdminDashboard({
           {/* Events View */}
           {activeView === "events" && (
             <div className="space-y-4">
-              <div className="flex gap-3">
-                <div className="flex-1 relative">
+              {/* Search and Filters - Responsive */}
+              <div className="space-y-3">
+                {/* Search Bar */}
+                <div className="relative">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-text-tertiary" />
                   <input
                     type="text"
@@ -2103,38 +2124,71 @@ export function AdminDashboard({
                     className="w-full pl-10 pr-4 py-3 bg-surface border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
                   />
                 </div>
-                <Button variant="secondary" onClick={handleDownloadTemplate}>
-                  <FileSpreadsheet className="w-4 h-4 mr-1" />
-                  템플릿
-                </Button>
-                <label className={`cursor-pointer inline-flex items-center justify-center gap-1.5 h-11 px-5 text-[14px] font-semibold rounded-[--radius-lg] transition-colors duration-150 ${isUploadingExcel ? "opacity-40 cursor-not-allowed" : ""} bg-surface-elevated text-text-primary hover:bg-border`}>
-                  {isUploadingExcel ? (
-                    <>
+
+                {/* Filters Row */}
+                <div className="flex flex-wrap gap-2">
+                  {/* Year Filter */}
+                  <select
+                    value={eventFilterYear ?? ""}
+                    onChange={(e) => setEventFilterYear(e.target.value ? parseInt(e.target.value) : null)}
+                    className="px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">전체 연도</option>
+                    {eventYears.map((year) => (
+                      <option key={year} value={year}>{year}년</option>
+                    ))}
+                  </select>
+
+                  {/* Month Filter */}
+                  <select
+                    value={eventFilterMonth ?? ""}
+                    onChange={(e) => setEventFilterMonth(e.target.value ? parseInt(e.target.value) : null)}
+                    className="px-3 py-2 bg-surface border border-border rounded-lg text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                  >
+                    <option value="">전체 월</option>
+                    {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((month) => (
+                      <option key={month} value={month}>{month}월</option>
+                    ))}
+                  </select>
+
+                  <span className="flex items-center text-sm text-text-tertiary ml-auto">
+                    총 {filteredEvents.length}개
+                  </span>
+                </div>
+
+                {/* Action Buttons - Responsive Grid */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                  <Button variant="secondary" onClick={handleDownloadTemplate} className="text-sm">
+                    <FileSpreadsheet className="w-4 h-4 mr-1" />
+                    <span className="hidden sm:inline">템플릿</span>
+                    <span className="sm:hidden">템플릿</span>
+                  </Button>
+                  <label className={`cursor-pointer inline-flex items-center justify-center gap-1.5 h-11 px-3 text-sm font-semibold rounded-xl transition-colors duration-150 ${isUploadingExcel ? "opacity-40 cursor-not-allowed" : ""} bg-surface-elevated text-text-primary hover:bg-border`}>
+                    {isUploadingExcel ? (
                       <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
-                      업로드 중...
-                    </>
-                  ) : (
-                    <>
-                      <Upload className="w-4 h-4" />
-                      엑셀 업로드
-                    </>
-                  )}
-                  <input
-                    type="file"
-                    accept=".xlsx,.xls"
-                    onChange={handleExcelUpload}
-                    className="hidden"
-                    disabled={isUploadingExcel}
-                  />
-                </label>
-                <Button variant="secondary" onClick={() => setShowImportModal(true)}>
-                  <Download className="w-4 h-4 mr-1" />
-                  가져오기
-                </Button>
-                <Button onClick={() => openEventModal()}>
-                  <Plus className="w-4 h-4 mr-1" />
-                  추가
-                </Button>
+                    ) : (
+                      <>
+                        <Upload className="w-4 h-4" />
+                        <span>업로드</span>
+                      </>
+                    )}
+                    <input
+                      type="file"
+                      accept=".xlsx,.xls"
+                      onChange={handleExcelUpload}
+                      className="hidden"
+                      disabled={isUploadingExcel}
+                    />
+                  </label>
+                  <Button variant="secondary" onClick={() => setShowImportModal(true)} className="text-sm">
+                    <Download className="w-4 h-4 mr-1" />
+                    <span>가져오기</span>
+                  </Button>
+                  <Button onClick={() => openEventModal()} className="text-sm">
+                    <Plus className="w-4 h-4 mr-1" />
+                    <span>추가</span>
+                  </Button>
+                </div>
               </div>
 
               {/* Bulk Actions Bar */}
@@ -2843,123 +2897,6 @@ export function AdminDashboard({
                                     {(log.metadata as { location?: string }).location}
                                   </div>
                                 )}
-                              </td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </Card>
-                </>
-              )}
-            </div>
-          )}
-
-          {/* API Logs View */}
-          {activeView === "api-logs" && (
-            <div className="space-y-4">
-              {apiLogs.length === 0 ? (
-                <Card className="text-center py-12">
-                  <Activity className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
-                  <p className="text-text-secondary">API 로그가 없습니다</p>
-                </Card>
-              ) : (
-                <>
-                  {/* Mobile Card View */}
-                  <div className="md:hidden space-y-3">
-                    {apiLogs.map((log) => (
-                      <Card key={log.id} className="p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                            log.method === "GET" ? "bg-blue-500/20 text-blue-500" :
-                            log.method === "POST" ? "bg-green-500/20 text-green-500" :
-                            log.method === "PUT" ? "bg-yellow-500/20 text-yellow-500" :
-                            log.method === "DELETE" ? "bg-red-500/20 text-red-500" :
-                            "bg-gray-500/20 text-gray-500"
-                          }`}>
-                            {log.method}
-                          </span>
-                          <span className="font-mono text-sm text-text-primary truncate flex-1">{log.path}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm">
-                          <div className="flex items-center gap-2">
-                            {log.statusCode && (
-                              <span className={`px-1.5 py-0.5 rounded text-xs font-medium ${
-                                log.statusCode >= 200 && log.statusCode < 300 ? "bg-success/10 text-success" :
-                                log.statusCode >= 400 ? "bg-error/10 text-error" :
-                                "bg-warning/10 text-warning"
-                              }`}>
-                                {log.statusCode}
-                              </span>
-                            )}
-                            {log.duration && (
-                              <span className="text-text-tertiary">{log.duration}ms</span>
-                            )}
-                          </div>
-                          <span className="text-text-tertiary">{formatRelativeTime(new Date(log.createdAt))}</span>
-                        </div>
-                        {log.ipAddress && (
-                          <div className="mt-2 pt-2 border-t border-border text-xs text-text-tertiary font-mono">
-                            {log.ipAddress}
-                          </div>
-                        )}
-                      </Card>
-                    ))}
-                  </div>
-
-                  {/* Desktop Table View */}
-                  <Card className="overflow-hidden hidden md:block">
-                    <div className="overflow-x-auto">
-                      <table className="w-full min-w-[700px]">
-                        <thead>
-                          <tr className="bg-surface-elevated border-b border-border">
-                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">Method</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">Path</th>
-                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">Status</th>
-                            <th className="text-right px-4 py-3 text-sm font-medium text-text-secondary">Duration</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">시간</th>
-                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary hidden lg:table-cell">IP</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {apiLogs.map((log) => (
-                            <tr
-                              key={log.id}
-                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated transition-colors"
-                            >
-                              <td className="px-4 py-3">
-                                <span className={`px-2 py-0.5 rounded text-xs font-bold ${
-                                  log.method === "GET" ? "bg-blue-500/20 text-blue-500" :
-                                  log.method === "POST" ? "bg-green-500/20 text-green-500" :
-                                  log.method === "PUT" ? "bg-yellow-500/20 text-yellow-500" :
-                                  log.method === "DELETE" ? "bg-red-500/20 text-red-500" :
-                                  "bg-gray-500/20 text-gray-500"
-                                }`}>
-                                  {log.method}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className="font-mono text-sm text-text-primary">{log.path}</span>
-                              </td>
-                              <td className="px-4 py-3 text-center">
-                                {log.statusCode ? (
-                                  <span className={`px-2 py-0.5 rounded text-xs font-medium ${
-                                    log.statusCode >= 200 && log.statusCode < 300 ? "bg-success/10 text-success" :
-                                    log.statusCode >= 400 ? "bg-error/10 text-error" :
-                                    "bg-warning/10 text-warning"
-                                  }`}>
-                                    {log.statusCode}
-                                  </span>
-                                ) : (
-                                  <span className="text-text-tertiary">-</span>
-                                )}
-                              </td>
-                              <td className="px-4 py-3 text-right text-sm text-text-secondary">
-                                {log.duration ? `${log.duration}ms` : "-"}
-                              </td>
-                              <td className="px-4 py-3 text-sm text-text-secondary">{formatRelativeTime(new Date(log.createdAt))}</td>
-                              <td className="px-4 py-3 hidden lg:table-cell">
-                                <span className="text-sm font-mono text-text-tertiary">{log.ipAddress || "-"}</span>
                               </td>
                             </tr>
                           ))}

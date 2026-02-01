@@ -3,7 +3,8 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Trophy, X, Check, Star, Plus } from "lucide-react";
+import { Calendar, MapPin, Trophy, X, Check, Star, Plus, Users } from "lucide-react";
+import Image from "next/image";
 
 interface MarathonEvent {
   id: string;
@@ -22,9 +23,21 @@ interface UserEvent {
   event: MarathonEvent;
 }
 
+interface CrewParticipant {
+  id: string;
+  name: string | null;
+  image: string | null;
+}
+
+interface CrewEventCount {
+  count: number;
+  participants: CrewParticipant[];
+}
+
 export default function EventsPage() {
   const [events, setEvents] = useState<MarathonEvent[]>([]);
   const [userEvents, setUserEvents] = useState<UserEvent[]>([]);
+  const [crewEventCounts, setCrewEventCounts] = useState<Record<string, CrewEventCount>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<number | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<MarathonEvent | null>(null);
@@ -43,10 +56,11 @@ export default function EventsPage() {
   const fetchData = async () => {
     setIsLoading(true);
     try {
-      // 두 API를 동시에 호출
-      const [eventsResponse, userEventsResponse] = await Promise.all([
+      // 세 API를 동시에 호출
+      const [eventsResponse, userEventsResponse, crewCountsResponse] = await Promise.all([
         fetch("/api/events?upcoming=true"), // 서버에서 오늘 이후 대회만 필터링
         fetch("/api/user-events"),
+        fetch("/api/crew-event-counts"),
       ]);
 
       if (eventsResponse.ok) {
@@ -60,6 +74,11 @@ export default function EventsPage() {
         setIsLoggedIn(true);
       } else if (userEventsResponse.status === 401) {
         setIsLoggedIn(false);
+      }
+
+      if (crewCountsResponse.ok) {
+        const data = await crewCountsResponse.json();
+        setCrewEventCounts(data);
       }
     } catch (error) {
       console.error("Failed to fetch data:", error);
@@ -203,6 +222,7 @@ export default function EventsPage() {
     const { formatted } = formatDate(event.date!);
     const eventDate = new Date(event.date!);
     const isRegistered = userEventIds.has(event.id);
+    const crewData = crewEventCounts[event.id];
 
     return (
       <button
@@ -260,20 +280,53 @@ export default function EventsPage() {
               </p>
             )}
 
-            {/* Course Badges - clearly below all text */}
-            <div className="flex flex-wrap gap-1.5 mt-2">
-              {getCourses(event).map((course) => (
-                <span
-                  key={course}
-                  className={`text-xs px-2 py-0.5 rounded font-medium ${
-                    userEvent?.course === course
-                      ? "bg-green-500/20 text-green-500"
-                      : "bg-surface-elevated text-text-secondary"
-                  }`}
-                >
-                  {course}
-                </span>
-              ))}
+            {/* Course Badges and Crew Participants */}
+            <div className="flex items-center justify-between mt-2 gap-2">
+              <div className="flex flex-wrap gap-1.5">
+                {getCourses(event).map((course) => (
+                  <span
+                    key={course}
+                    className={`text-xs px-2 py-0.5 rounded font-medium ${
+                      userEvent?.course === course
+                        ? "bg-green-500/20 text-green-500"
+                        : "bg-surface-elevated text-text-secondary"
+                    }`}
+                  >
+                    {course}
+                  </span>
+                ))}
+              </div>
+
+              {/* Crew Participants */}
+              {crewData && crewData.count > 0 && (
+                <div className="flex items-center gap-1 shrink-0">
+                  <div className="flex -space-x-2">
+                    {crewData.participants.slice(0, 3).map((p) => (
+                      p.image ? (
+                        <Image
+                          key={p.id}
+                          src={p.image}
+                          alt={p.name || ""}
+                          width={20}
+                          height={20}
+                          className="w-5 h-5 rounded-full border border-surface"
+                        />
+                      ) : (
+                        <div
+                          key={p.id}
+                          className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-medium flex items-center justify-center border border-surface"
+                        >
+                          {p.name?.[0] || "?"}
+                        </div>
+                      )
+                    ))}
+                  </div>
+                  <span className="text-xs text-primary font-medium flex items-center gap-0.5">
+                    <Users className="w-3 h-3" />
+                    {crewData.count}
+                  </span>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -461,6 +514,38 @@ export default function EventsPage() {
                 <X className="w-6 h-6" />
               </button>
             </div>
+
+            {/* Crew Participants Section */}
+            {crewEventCounts[selectedEvent.id] && crewEventCounts[selectedEvent.id].count > 0 && (
+              <div className="mb-4 p-3 bg-primary/5 rounded-xl">
+                <div className="flex items-center gap-2 mb-2">
+                  <Users className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium text-primary">
+                    크루원 {crewEventCounts[selectedEvent.id].count}명 참가
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {crewEventCounts[selectedEvent.id].participants.map((p) => (
+                    <div key={p.id} className="flex items-center gap-1.5 bg-surface rounded-full px-2 py-1">
+                      {p.image ? (
+                        <Image
+                          src={p.image}
+                          alt={p.name || ""}
+                          width={20}
+                          height={20}
+                          className="w-5 h-5 rounded-full"
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-primary/20 text-primary text-[10px] font-medium flex items-center justify-center">
+                          {p.name?.[0] || "?"}
+                        </div>
+                      )}
+                      <span className="text-xs text-text-secondary">{p.name || "이름 없음"}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             {/* Registered Status */}
             {userEventIds.has(selectedEvent.id) ? (

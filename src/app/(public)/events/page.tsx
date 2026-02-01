@@ -36,37 +36,35 @@ export default function EventsPage() {
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
-    fetchEvents();
-    fetchUserEvents();
+    fetchData();
   }, []);
 
-  const fetchEvents = async () => {
+  // 병렬로 데이터 가져오기
+  const fetchData = async () => {
     setIsLoading(true);
     try {
-      const response = await fetch("/api/events");
-      if (response.ok) {
-        const data = await response.json();
+      // 두 API를 동시에 호출
+      const [eventsResponse, userEventsResponse] = await Promise.all([
+        fetch("/api/events?upcoming=true"), // 서버에서 오늘 이후 대회만 필터링
+        fetch("/api/user-events"),
+      ]);
+
+      if (eventsResponse.ok) {
+        const data = await eventsResponse.json();
         setEvents(data);
       }
-    } catch (error) {
-      console.error("Failed to fetch events:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  const fetchUserEvents = async () => {
-    try {
-      const response = await fetch("/api/user-events");
-      if (response.ok) {
-        const data = await response.json();
+      if (userEventsResponse.ok) {
+        const data = await userEventsResponse.json();
         setUserEvents(data);
         setIsLoggedIn(true);
-      } else if (response.status === 401) {
+      } else if (userEventsResponse.status === 401) {
         setIsLoggedIn(false);
       }
     } catch (error) {
-      console.error("Failed to fetch user events:", error);
+      console.error("Failed to fetch data:", error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -126,20 +124,12 @@ export default function EventsPage() {
     window.location.href = `/records/new?eventId=${eventId}`;
   };
 
-  // 올해 앞으로 있는 대회만 필터링
+  // 서버에서 이미 오늘 이후 대회만 필터링됨 - 올해만 추가 필터링
   const upcomingEvents = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
-    return events
-      .filter((event) => {
-        if (!event.date) return false;
-        const eventDate = new Date(event.date);
-        return eventDate >= today && eventDate.getFullYear() === currentYear;
-      })
-      .sort((a, b) => {
-        return new Date(a.date!).getTime() - new Date(b.date!).getTime();
-      });
+    return events.filter((event) => {
+      if (!event.date) return false;
+      return new Date(event.date).getFullYear() === currentYear;
+    });
   }, [events, currentYear]);
 
   // 내 대회 필터링

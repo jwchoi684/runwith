@@ -5,22 +5,26 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { method, path, statusCode, duration, userId, ipAddress, userAgent } = body;
+    const { method, path, ipAddress, userAgent } = body;
 
     // Skip logging for the log-api endpoint itself and static files
-    if (path === "/api/log-api" || path.startsWith("/_next")) {
+    if (!path || path === "/api/log-api" || path.startsWith("/_next")) {
       return NextResponse.json({ success: true });
     }
 
+    // Get IP from header or body
+    const ip = request.headers.get("x-original-ip") || ipAddress || "unknown";
+    const ua = request.headers.get("x-original-ua") || userAgent || "";
+
     await prisma.apiLog.create({
       data: {
-        userId: userId || null,
+        userId: null,
         method: method || "GET",
-        path: path || "/",
-        statusCode: statusCode || null,
-        duration: duration || null,
-        ipAddress: ipAddress || null,
-        userAgent: userAgent || null,
+        path: path,
+        statusCode: null,
+        duration: null,
+        ipAddress: ip,
+        userAgent: ua,
       },
     });
 

@@ -2,48 +2,62 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 export async function middleware(request: NextRequest) {
-  const startTime = Date.now();
   const path = request.nextUrl.pathname;
-  const method = request.method;
 
-  // Skip logging for non-API routes, static files, and the log-api endpoint itself
+  // Skip logging for non-API routes, static files, and specific endpoints
   if (
     !path.startsWith("/api") ||
     path === "/api/log-api" ||
-    path.startsWith("/api/auth") // Skip auth routes to avoid loops
+    path === "/api/log-access" ||
+    path.startsWith("/api/auth")
   ) {
     return NextResponse.next();
   }
 
-  // Get client info
+  // Get client info from headers
   const forwardedFor = request.headers.get("x-forwarded-for");
   const realIP = request.headers.get("x-real-ip");
   const cfConnectingIP = request.headers.get("cf-connecting-ip");
+  // Render uses x-forwarded-for
   const ipAddress = forwardedFor?.split(",")[0]?.trim() || realIP || cfConnectingIP || "unknown";
-  const userAgent = request.headers.get("user-agent") || undefined;
+  const userAgent = request.headers.get("user-agent") || "";
+  const method = request.method;
 
-  // Process the request
-  const response = NextResponse.next();
+  // Clone the request to add timing header
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set("x-request-start", Date.now().toString());
 
-  // Log API call asynchronously (fire and forget)
-  const duration = Date.now() - startTime;
-
-  // Use fetch to log (async, non-blocking)
-  const baseUrl = request.nextUrl.origin;
-  fetch(`${baseUrl}/api/log-api`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      method,
-      path,
-      statusCode: response.status,
-      duration,
-      ipAddress,
-      userAgent,
-    }),
-  }).catch(() => {
-    // Silently fail - don't disrupt the request
+  const response = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
   });
+
+  // Log API call asynchronously using internal fetch
+  // Use absolute URL for Edge runtime
+  try {
+    const baseUrl = request.nextUrl.origin;
+    // Fire and forget - don't await
+    fetch(`${baseUrl}/api/log-api`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        // Pass the original client info
+        "x-original-ip": ipAddress,
+        "x-original-ua": userAgent,
+      },
+      body: JSON.stringify({
+        method,
+        path,
+        ipAddress,
+        userAgent,
+      }),
+    }).catch(() => {
+      // Silently fail
+    });
+  } catch {
+    // Silently fail
+  }
 
   return response;
 }

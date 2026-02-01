@@ -1643,8 +1643,8 @@ export function AdminDashboard({
                     <Activity className="w-5 h-5 text-success" />
                     DAU 추이 (최근 30일)
                   </h2>
-                  <Card className="p-4">
-                    <div className="flex items-end justify-between h-40 gap-1">
+                  <Card className="p-4 h-56">
+                    <div className="flex items-end justify-between h-36 gap-0.5">
                       {dauTrend.map((day, index) => {
                         const maxCount = Math.max(...dauTrend.map(d => d.count), 1);
                         const height = (day.count / maxCount) * 100;
@@ -1652,7 +1652,7 @@ export function AdminDashboard({
                         return (
                           <div
                             key={day.date}
-                            className="flex-1 flex flex-col items-center gap-1"
+                            className="flex-1 flex flex-col items-center"
                             title={`${day.date}: ${day.count}명`}
                           >
                             <div
@@ -1663,9 +1663,10 @@ export function AdminDashboard({
                         );
                       })}
                     </div>
-                    <div className="flex justify-between mt-2 text-xs text-text-tertiary">
+                    <div className="flex justify-between mt-3 text-xs text-text-tertiary">
                       <span>{dauTrend[0]?.date.slice(5)}</span>
-                      <span>오늘: {dauTrend[dauTrend.length - 1]?.count || 0}명</span>
+                      <span className="font-medium text-success">오늘: {dauTrend[dauTrend.length - 1]?.count || 0}명</span>
+                      <span>{dauTrend[dauTrend.length - 1]?.date.slice(5)}</span>
                     </div>
                   </Card>
                 </section>
@@ -1676,8 +1677,8 @@ export function AdminDashboard({
                     <TrendingUp className="w-5 h-5 text-primary" />
                     MAU 추이 (최근 12개월)
                   </h2>
-                  <Card className="p-4">
-                    <div className="flex items-end justify-between h-40 gap-2">
+                  <Card className="p-4 h-56">
+                    <div className="flex items-end justify-between h-36 gap-1">
                       {mauTrend.map((month, index) => {
                         const maxCount = Math.max(...mauTrend.map(m => m.count), 1);
                         const height = (month.count / maxCount) * 100;
@@ -1688,12 +1689,12 @@ export function AdminDashboard({
                             className="flex-1 flex flex-col items-center gap-1"
                             title={`${month.month}: ${month.count}명`}
                           >
-                            <span className="text-xs text-text-tertiary font-medium">{month.count}</span>
+                            <span className="text-[10px] text-text-tertiary font-medium">{month.count}</span>
                             <div
                               className={`w-full rounded-t transition-all ${isCurrentMonth ? "bg-primary" : "bg-primary/40"}`}
                               style={{ height: `${Math.max(height, 4)}%` }}
                             />
-                            <span className="text-xs text-text-tertiary">{month.label}</span>
+                            <span className="text-[10px] text-text-tertiary">{month.label}</span>
                           </div>
                         );
                       })}

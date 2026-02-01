@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Trophy, X, Check, Star } from "lucide-react";
+import { Calendar, MapPin, Trophy, X, Check, Star, Plus } from "lucide-react";
 
 interface MarathonEvent {
   id: string;
@@ -74,6 +74,10 @@ export default function EventsPage() {
     return new Set(userEvents.map((ue) => ue.eventId));
   }, [userEvents]);
 
+  const getUserEvent = (eventId: string) => {
+    return userEvents.find((ue) => ue.eventId === eventId);
+  };
+
   const handleRegister = async () => {
     if (!selectedEvent) return;
 
@@ -94,7 +98,6 @@ export default function EventsPage() {
         setSelectedEvent(null);
         setSelectedCourse("");
       } else if (response.status === 401) {
-        // Redirect to login
         window.location.href = "/login";
       }
     } catch (error) {
@@ -117,6 +120,10 @@ export default function EventsPage() {
     } catch (error) {
       console.error("Failed to unregister:", error);
     }
+  };
+
+  const handleAddRecord = (eventId: string) => {
+    window.location.href = `/records/new?eventId=${eventId}`;
   };
 
   // 올해 앞으로 있는 대회만 필터링
@@ -239,34 +246,36 @@ export default function EventsPage() {
 
           {/* Right: Event Info */}
           <div className="flex-1 min-w-0">
-            {/* Event Name */}
-            <div className="flex items-start gap-1.5">
+            {/* Event Name - full width, no overlap */}
+            <div className="flex items-start gap-1.5 mb-1">
               {isRegistered && (
                 <Check className="w-4 h-4 text-green-500 shrink-0 mt-0.5" />
               )}
               {event.isOfficial && !isRegistered && (
                 <Trophy className="w-4 h-4 text-yellow-500 shrink-0 mt-0.5" />
               )}
-              <h3 className="font-medium text-text-primary leading-snug">
+              <h3 className="font-medium text-text-primary leading-snug break-words">
                 {event.name}
               </h3>
             </div>
 
-            {/* Date & Location */}
-            <p className="text-sm text-text-tertiary mt-1">{formatted}</p>
+            {/* Date */}
+            <p className="text-sm text-text-tertiary">{formatted}</p>
+
+            {/* Location */}
             {event.location && (
               <p className="text-sm text-text-tertiary flex items-center gap-1 mt-0.5">
                 <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span>{event.location}</span>
+                <span className="break-words">{event.location}</span>
               </p>
             )}
 
-            {/* Course Badges */}
+            {/* Course Badges - clearly below all text */}
             <div className="flex flex-wrap gap-1.5 mt-2">
               {getCourses(event).map((course) => (
                 <span
                   key={course}
-                  className={`text-xs px-2 py-1 rounded-md font-medium ${
+                  className={`text-xs px-2 py-0.5 rounded font-medium ${
                     userEvent?.course === course
                       ? "bg-green-500/20 text-green-500"
                       : "bg-surface-elevated text-text-secondary"
@@ -380,7 +389,7 @@ export default function EventsPage() {
                   </h2>
                   <div className="bg-surface rounded-2xl overflow-hidden divide-y divide-border">
                     {monthEvents.map((event) => {
-                      const userEvent = userEvents.find((ue) => ue.eventId === event.id);
+                      const userEvent = getUserEvent(event.id);
                       return renderEventCard(event, userEvent);
                     })}
                   </div>
@@ -416,11 +425,12 @@ export default function EventsPage() {
       {selectedEvent && (
         <div className="fixed inset-0 bg-black/50 flex items-end justify-center z-50">
           <div className="bg-surface w-full max-w-lg rounded-t-3xl p-6 pb-8 animate-slide-up">
+            {/* Header */}
             <div className="flex items-start justify-between mb-4">
-              <div className="flex-1">
+              <div className="flex-1 pr-4">
                 <div className="flex items-center gap-2">
                   {selectedEvent.isOfficial && (
-                    <Trophy className="w-5 h-5 text-yellow-500" />
+                    <Trophy className="w-5 h-5 text-yellow-500 shrink-0" />
                   )}
                   <h2 className="text-xl font-bold text-text-primary">
                     {selectedEvent.name}
@@ -438,8 +448,8 @@ export default function EventsPage() {
                 )}
                 {selectedEvent.location && (
                   <p className="text-text-tertiary flex items-center gap-1 mt-1">
-                    <MapPin className="w-4 h-4" />
-                    {selectedEvent.location}
+                    <MapPin className="w-4 h-4 shrink-0" />
+                    <span>{selectedEvent.location}</span>
                   </p>
                 )}
               </div>
@@ -454,71 +464,81 @@ export default function EventsPage() {
               </button>
             </div>
 
-            {/* Course Selection */}
-            <div className="mb-6">
-              <p className="text-sm font-medium text-text-secondary mb-2">
-                참가 종목 선택
-              </p>
-              <div className="flex flex-wrap gap-2">
-                {getCourses(selectedEvent).map((course) => (
-                  <button
-                    key={course}
-                    onClick={() => setSelectedCourse(course)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
-                      selectedCourse === course
-                        ? "bg-primary text-white"
-                        : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
-                    }`}
-                  >
-                    {course}
-                  </button>
-                ))}
-              </div>
-            </div>
-
-            {/* Action Buttons */}
+            {/* Registered Status */}
             {userEventIds.has(selectedEvent.id) ? (
-              <div className="space-y-3">
-                <div className="flex items-center justify-center gap-2 py-3 bg-green-500/10 rounded-xl">
+              <>
+                {/* Already registered */}
+                <div className="flex items-center justify-center gap-2 py-3 bg-green-500/10 rounded-xl mb-4">
                   <Check className="w-5 h-5 text-green-500" />
                   <span className="font-medium text-green-500">참가 확정됨</span>
+                  {getUserEvent(selectedEvent.id)?.course && (
+                    <span className="text-green-500/70">
+                      ({getUserEvent(selectedEvent.id)?.course})
+                    </span>
+                  )}
                 </div>
-                <div className="flex gap-3">
+
+                {/* Action Buttons for Registered */}
+                <div className="space-y-3">
+                  <Button
+                    onClick={() => handleAddRecord(selectedEvent.id)}
+                    className="w-full"
+                  >
+                    <Plus className="w-4 h-4 mr-2" />
+                    기록 추가
+                  </Button>
                   <Button
                     variant="ghost"
                     onClick={() => handleUnregister(selectedEvent.id)}
-                    className="flex-1 text-red-500 hover:bg-red-500/10"
+                    className="w-full text-red-500 hover:bg-red-500/10"
                   >
                     참가 취소
                   </Button>
-                  <Button
-                    onClick={() => {
-                      window.location.href = `/records/new?eventId=${selectedEvent.id}`;
-                    }}
-                    className="flex-1"
-                  >
-                    기록 추가
-                  </Button>
                 </div>
-              </div>
+              </>
             ) : (
-              <Button
-                onClick={handleRegister}
-                disabled={isRegistering || !selectedCourse}
-                className="w-full"
-              >
-                {isRegistering ? "등록 중..." : "참가 확정"}
-              </Button>
-            )}
+              <>
+                {/* Not registered - Course Selection */}
+                <div className="mb-6">
+                  <p className="text-sm font-medium text-text-secondary mb-2">
+                    참가 종목 선택
+                  </p>
+                  <div className="flex flex-wrap gap-2">
+                    {getCourses(selectedEvent).map((course) => (
+                      <button
+                        key={course}
+                        onClick={() => setSelectedCourse(course)}
+                        className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                          selectedCourse === course
+                            ? "bg-primary text-white"
+                            : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
+                        }`}
+                      >
+                        {course}
+                      </button>
+                    ))}
+                  </div>
+                </div>
 
-            {!isLoggedIn && (
-              <p className="text-sm text-text-tertiary text-center mt-3">
-                참가 확정하려면{" "}
-                <a href="/login" className="text-primary underline">
-                  로그인
-                </a>
-                이 필요합니다
-              </p>
+                {/* Register Button */}
+                <Button
+                  onClick={handleRegister}
+                  disabled={isRegistering || !selectedCourse}
+                  className="w-full"
+                >
+                  {isRegistering ? "등록 중..." : "참가 확정"}
+                </Button>
+
+                {!isLoggedIn && (
+                  <p className="text-sm text-text-tertiary text-center mt-3">
+                    참가 확정하려면{" "}
+                    <a href="/login" className="text-primary underline">
+                      로그인
+                    </a>
+                    이 필요합니다
+                  </p>
+                )}
+              </>
             )}
           </div>
         </div>

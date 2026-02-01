@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useMemo } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Cloud, Sun, CloudRain, Snowflake, ChevronDown, MapPin, Search, Plus, X, Calendar } from "lucide-react";
@@ -39,6 +39,7 @@ const distancePresets = [
 
 export default function NewRecordPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const eventDropdownRef = useRef<HTMLDivElement>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [events, setEvents] = useState<MarathonEvent[]>([]);
@@ -51,6 +52,7 @@ export default function NewRecordPage() {
     distance: "42.195",
   });
   const [isCreatingEvent, setIsCreatingEvent] = useState(false);
+  const [initialEventLoaded, setInitialEventLoaded] = useState(false);
 
   // 연도/월 필터 상태 (기본값: 현재 연도, 현재 월)
   const currentDate = new Date();
@@ -70,9 +72,32 @@ export default function NewRecordPage() {
     eventName: "",
   });
 
+  // URL에서 eventId 가져오기
+  const urlEventId = searchParams.get("eventId");
+
   useEffect(() => {
     fetchEvents();
   }, []);
+
+  // URL의 eventId로 대회 자동 선택
+  useEffect(() => {
+    if (urlEventId && events.length > 0 && !initialEventLoaded) {
+      const event = events.find((e) => e.id === urlEventId);
+      if (event) {
+        const displayName = event.date
+          ? `${event.name} (${new Date(event.date).toLocaleDateString("ko-KR", { month: "short", day: "numeric" })})`
+          : event.name;
+
+        setFormData((prev) => ({
+          ...prev,
+          eventId: event.id,
+          eventName: displayName,
+          date: event.date || prev.date,
+        }));
+        setInitialEventLoaded(true);
+      }
+    }
+  }, [urlEventId, events, initialEventLoaded]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

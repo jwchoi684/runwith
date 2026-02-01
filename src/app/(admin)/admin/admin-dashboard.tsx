@@ -167,28 +167,9 @@ interface AccessLog {
   };
 }
 
-interface ApiLog {
-  id: string;
-  userId: string | null;
-  method: string;
-  path: string;
-  statusCode: number | null;
-  duration: number | null;
-  ipAddress: string | null;
-  userAgent: string | null;
-  createdAt: Date;
-}
-
 interface PageStats {
   path: string;
   count: number;
-}
-
-interface ApiStats {
-  path: string;
-  method: string;
-  count: number;
-  avgDuration: number | null;
 }
 
 interface Stats {
@@ -196,8 +177,17 @@ interface Stats {
   totalRecords: number;
   totalCrews: number;
   totalEvents: number;
-  dau: number;
-  mau: number;
+}
+
+interface DauTrend {
+  date: string;
+  count: number;
+}
+
+interface MauTrend {
+  month: string;
+  label: string;
+  count: number;
 }
 
 interface PaceGroup {
@@ -226,9 +216,9 @@ interface AdminDashboardProps {
   crewMembers: CrewMemberMapping[];
   paceGroups: PaceGroup[];
   accessLogs: AccessLog[];
-  apiLogs: ApiLog[];
   pageStats: PageStats[];
-  apiStats: ApiStats[];
+  dauTrend: DauTrend[];
+  mauTrend: MauTrend[];
   currentUserId: string;
 }
 
@@ -251,9 +241,9 @@ export function AdminDashboard({
   crewMembers,
   paceGroups,
   accessLogs,
-  apiLogs,
   pageStats,
-  apiStats,
+  dauTrend,
+  mauTrend,
   currentUserId,
 }: AdminDashboardProps) {
   const router = useRouter();
@@ -324,9 +314,8 @@ export function AdminDashboard({
   const selectedCrew = crews.find((c) => c.id === selectedCrewId);
   const userRecords = recentRecords.filter((r) => r.user.id === selectedUserId);
 
-  // 선택된 사용자의 접속 로그, API 로그 필터링
+  // 선택된 사용자의 접속 로그 필터링
   const userAccessLogs = accessLogs.filter((log) => log.userId === selectedUserId);
-  const userApiLogs = apiLogs.filter((log) => log.ipAddress && userAccessLogs.some((al) => al.ipAddress === log.ipAddress));
 
   // 사용자 페이지 뷰 통계
   const userPageViews = userAccessLogs.reduce((acc, log) => {
@@ -1564,32 +1553,7 @@ export function AdminDashboard({
           {/* Dashboard View */}
           {activeView === "dashboard" && (
             <div className="space-y-6">
-              {/* DAU/MAU Stats */}
-              <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4">
-                <Card className="p-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-success/10 flex items-center justify-center">
-                      <Activity className="w-6 h-6 text-success" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-text-primary">{stats.dau}</p>
-                      <p className="text-sm text-text-tertiary">DAU (오늘)</p>
-                    </div>
-                  </div>
-                </Card>
-                <Card className="p-5">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <TrendingUp className="w-6 h-6 text-primary" />
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-text-primary">{stats.mau}</p>
-                      <p className="text-sm text-text-tertiary">MAU (이번 달)</p>
-                    </div>
-                  </div>
-                </Card>
-              </div>
-
+              {/* Quick Stats */}
               <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-4">
                 <Card className="text-center py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("users")}>
                   <Users className="w-8 h-8 text-primary mx-auto mb-2" />
@@ -1671,6 +1635,73 @@ export function AdminDashboard({
                 </Card>
               </section>
 
+              {/* DAU/MAU Trend Charts */}
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                {/* DAU Trend (Last 30 Days) */}
+                <section>
+                  <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
+                    <Activity className="w-5 h-5 text-success" />
+                    DAU 추이 (최근 30일)
+                  </h2>
+                  <Card className="p-4">
+                    <div className="flex items-end justify-between h-40 gap-1">
+                      {dauTrend.map((day, index) => {
+                        const maxCount = Math.max(...dauTrend.map(d => d.count), 1);
+                        const height = (day.count / maxCount) * 100;
+                        const isToday = index === dauTrend.length - 1;
+                        return (
+                          <div
+                            key={day.date}
+                            className="flex-1 flex flex-col items-center gap-1"
+                            title={`${day.date}: ${day.count}명`}
+                          >
+                            <div
+                              className={`w-full rounded-t transition-all ${isToday ? "bg-success" : "bg-success/40"}`}
+                              style={{ height: `${Math.max(height, 2)}%` }}
+                            />
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-text-tertiary">
+                      <span>{dauTrend[0]?.date.slice(5)}</span>
+                      <span>오늘: {dauTrend[dauTrend.length - 1]?.count || 0}명</span>
+                    </div>
+                  </Card>
+                </section>
+
+                {/* MAU Trend (Last 12 Months) */}
+                <section>
+                  <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
+                    <TrendingUp className="w-5 h-5 text-primary" />
+                    MAU 추이 (최근 12개월)
+                  </h2>
+                  <Card className="p-4">
+                    <div className="flex items-end justify-between h-40 gap-2">
+                      {mauTrend.map((month, index) => {
+                        const maxCount = Math.max(...mauTrend.map(m => m.count), 1);
+                        const height = (month.count / maxCount) * 100;
+                        const isCurrentMonth = index === mauTrend.length - 1;
+                        return (
+                          <div
+                            key={month.month}
+                            className="flex-1 flex flex-col items-center gap-1"
+                            title={`${month.month}: ${month.count}명`}
+                          >
+                            <span className="text-xs text-text-tertiary font-medium">{month.count}</span>
+                            <div
+                              className={`w-full rounded-t transition-all ${isCurrentMonth ? "bg-primary" : "bg-primary/40"}`}
+                              style={{ height: `${Math.max(height, 4)}%` }}
+                            />
+                            <span className="text-xs text-text-tertiary">{month.label}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </Card>
+                </section>
+              </div>
+
               {/* Statistics Section */}
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Most Viewed Pages */}
@@ -1706,50 +1737,33 @@ export function AdminDashboard({
                   </Card>
                 </section>
 
-                {/* Most Called APIs */}
+                {/* Recent Users */}
                 <section>
                   <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-success" />
-                    API 호출 통계
+                    <Users className="w-5 h-5 text-warning" />
+                    최근 가입 사용자
                   </h2>
                   <Card className="divide-y divide-border">
-                    {apiStats.length === 0 ? (
-                      <div className="p-4 text-center text-text-tertiary">데이터가 없습니다</div>
-                    ) : (
-                      apiStats.slice(0, 5).map((stat, index) => (
-                        <div key={`${stat.method}-${stat.path}`} className="flex items-center gap-3 p-4">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold ${
-                            index === 0 ? "bg-yellow-500/20 text-yellow-500" :
-                            index === 1 ? "bg-gray-300/20 text-gray-400" :
-                            index === 2 ? "bg-orange-500/20 text-orange-500" :
-                            "bg-surface-elevated text-text-tertiary"
-                          }`}>
-                            {index + 1}
+                    {users.slice(0, 5).map((user) => (
+                      <div
+                        key={user.id}
+                        className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
+                        onClick={() => openUserDetail(user.id)}
+                      >
+                        {user.image ? (
+                          <Image src={user.image} alt="" width={36} height={36} className="rounded-full" />
+                        ) : (
+                          <div className="w-9 h-9 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                            {user.name?.[0]?.toUpperCase() || "U"}
                           </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <span className={`px-1.5 py-0.5 rounded text-xs font-bold ${
-                                stat.method === "GET" ? "bg-blue-500/20 text-blue-500" :
-                                stat.method === "POST" ? "bg-green-500/20 text-green-500" :
-                                stat.method === "PUT" ? "bg-yellow-500/20 text-yellow-500" :
-                                stat.method === "DELETE" ? "bg-red-500/20 text-red-500" :
-                                "bg-gray-500/20 text-gray-500"
-                              }`}>
-                                {stat.method}
-                              </span>
-                              <p className="font-medium text-text-primary truncate">{stat.path}</p>
-                            </div>
-                            {stat.avgDuration && (
-                              <p className="text-xs text-text-tertiary mt-0.5">평균 {stat.avgDuration}ms</p>
-                            )}
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-success">{stat.count.toLocaleString()}</p>
-                            <p className="text-xs text-text-tertiary">호출</p>
-                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-text-primary truncate">{user.name || "Unknown"}</p>
+                          <p className="text-xs text-text-tertiary">{formatRelativeTime(new Date(user.createdAt))}</p>
                         </div>
-                      ))
-                    )}
+                        <ChevronRight className="w-4 h-4 text-text-tertiary" />
+                      </div>
+                    ))}
                   </Card>
                 </section>
               </div>
@@ -3007,10 +3021,6 @@ export function AdminDashboard({
                   <p className="text-2xl font-bold text-primary">{sortedUserPageViews.length}</p>
                   <p className="text-sm text-text-tertiary">방문 페이지</p>
                 </Card>
-                <Card className="text-center py-4">
-                  <p className="text-2xl font-bold text-primary">{userApiLogs.length}</p>
-                  <p className="text-sm text-text-tertiary">API 호출</p>
-                </Card>
               </div>
 
               <section>
@@ -3103,45 +3113,6 @@ export function AdminDashboard({
                 </Card>
               </section>
 
-              {/* API 로그 (IP 기반) */}
-              <section>
-                <h3 className="text-lg font-semibold text-text-primary mb-3">
-                  <Activity className="w-5 h-5 inline mr-2" />
-                  API 호출 로그 (IP 기반, {userApiLogs.length}개)
-                </h3>
-                <Card className="divide-y divide-border max-h-[400px] overflow-y-auto">
-                  {userApiLogs.length === 0 ? (
-                    <p className="text-center text-text-tertiary py-8">API 호출 기록이 없습니다</p>
-                  ) : (
-                    userApiLogs.slice(0, 50).map((log) => (
-                      <div key={log.id} className="p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <div className="flex items-center gap-2">
-                            <span className={`px-2 py-0.5 text-xs font-medium rounded ${
-                              log.method === "GET" ? "bg-green-500/10 text-green-500" :
-                              log.method === "POST" ? "bg-blue-500/10 text-blue-500" :
-                              log.method === "PUT" ? "bg-yellow-500/10 text-yellow-500" :
-                              log.method === "DELETE" ? "bg-red-500/10 text-red-500" :
-                              "bg-gray-500/10 text-gray-500"
-                            }`}>
-                              {log.method}
-                            </span>
-                            <span className="font-mono text-sm text-text-primary">{log.path}</span>
-                          </div>
-                          <span className="text-xs text-text-tertiary">
-                            {formatRelativeTime(new Date(log.createdAt))}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-3 text-xs text-text-tertiary">
-                          {log.statusCode && <span>Status: {log.statusCode}</span>}
-                          {log.duration && <span>{log.duration}ms</span>}
-                          {log.ipAddress && <span>IP: {log.ipAddress}</span>}
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </Card>
-              </section>
             </div>
           )}
 

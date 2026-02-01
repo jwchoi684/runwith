@@ -45,6 +45,7 @@ export default function EventsPage() {
   const [isRegistering, setIsRegistering] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [activeTab, setActiveTab] = useState<"all" | "my">("all");
+  const [showPast, setShowPast] = useState(false);
 
   const currentYear = new Date().getFullYear();
 
@@ -58,7 +59,7 @@ export default function EventsPage() {
     try {
       // 세 API를 동시에 호출
       const [eventsResponse, userEventsResponse, crewCountsResponse] = await Promise.all([
-        fetch("/api/events?upcoming=true"), // 서버에서 오늘 이후 대회만 필터링
+        fetch("/api/events"), // 모든 대회 가져오기
         fetch("/api/user-events"),
         fetch("/api/crew-event-counts"),
       ]);
@@ -143,13 +144,39 @@ export default function EventsPage() {
     window.location.href = `/records/new?eventId=${eventId}`;
   };
 
-  // 서버에서 이미 오늘 이후 대회만 필터링됨 - 올해만 추가 필터링
+  // 오늘 기준으로 예정 대회와 지난 대회 분리
+  const today = useMemo(() => {
+    const d = new Date();
+    d.setHours(0, 0, 0, 0);
+    return d;
+  }, []);
+
+  // 예정 대회 (오늘 이후)
   const upcomingEvents = useMemo(() => {
-    return events.filter((event) => {
-      if (!event.date) return false;
-      return new Date(event.date).getFullYear() === currentYear;
-    });
-  }, [events, currentYear]);
+    return events
+      .filter((event) => {
+        if (!event.date) return false;
+        const eventDate = new Date(event.date);
+        return eventDate >= today && eventDate.getFullYear() === currentYear;
+      })
+      .sort((a, b) => new Date(a.date!).getTime() - new Date(b.date!).getTime());
+  }, [events, currentYear, today]);
+
+  // 지난 대회 (오늘 이전)
+  const pastEvents = useMemo(() => {
+    return events
+      .filter((event) => {
+        if (!event.date) return false;
+        const eventDate = new Date(event.date);
+        return eventDate < today && eventDate.getFullYear() === currentYear;
+      })
+      .sort((a, b) => new Date(b.date!).getTime() - new Date(a.date!).getTime()); // 최신순
+  }, [events, currentYear, today]);
+
+  // 현재 표시할 대회 목록
+  const displayEvents = useMemo(() => {
+    return showPast ? pastEvents : upcomingEvents;
+  }, [showPast, pastEvents, upcomingEvents]);
 
   // 내 대회 필터링
   const myUpcomingEvents = useMemo(() => {
@@ -174,20 +201,20 @@ export default function EventsPage() {
   const eventCountByMonth = useMemo(() => {
     const counts: Record<number, number> = {};
     allMonths.forEach((m) => (counts[m] = 0));
-    upcomingEvents.forEach((e) => {
+    displayEvents.forEach((e) => {
       const month = new Date(e.date!).getMonth() + 1;
       counts[month] = (counts[month] || 0) + 1;
     });
     return counts;
-  }, [upcomingEvents]);
+  }, [displayEvents]);
 
   // 월별 필터링된 대회
   const filteredEvents = useMemo(() => {
-    if (selectedMonth === null) return upcomingEvents;
-    return upcomingEvents.filter(
+    if (selectedMonth === null) return displayEvents;
+    return displayEvents.filter(
       (e) => new Date(e.date!).getMonth() + 1 === selectedMonth
     );
-  }, [upcomingEvents, selectedMonth]);
+  }, [displayEvents, selectedMonth]);
 
   // 월별로 그룹화
   const groupedEvents = useMemo(() => {
@@ -348,9 +375,39 @@ export default function EventsPage() {
           {currentYear}년 대회 일정
         </h1>
         <p className="text-sm text-text-tertiary mt-1">
-          앞으로 있는 마라톤 대회
+          {showPast ? "지난 마라톤 대회" : "앞으로 있는 마라톤 대회"}
         </p>
       </header>
+
+      {/* 예정/지난 대회 토글 */}
+      <div className="flex gap-2 bg-surface-elevated p-1 rounded-lg">
+        <button
+          onClick={() => {
+            setShowPast(false);
+            setSelectedMonth(null);
+          }}
+          className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
+            !showPast
+              ? "bg-primary text-white"
+              : "text-text-secondary hover:text-text-primary"
+          }`}
+        >
+          예정 대회 ({upcomingEvents.length})
+        </button>
+        <button
+          onClick={() => {
+            setShowPast(true);
+            setSelectedMonth(null);
+          }}
+          className={`flex-1 py-2 rounded-md text-sm font-medium transition-all ${
+            showPast
+              ? "bg-primary text-white"
+              : "text-text-secondary hover:text-text-primary"
+          }`}
+        >
+          지난 대회 ({pastEvents.length})
+        </button>
+      </div>
 
       {/* Tab Navigation */}
       {isLoggedIn && (
@@ -392,7 +449,7 @@ export default function EventsPage() {
                   : "bg-surface-elevated text-text-secondary hover:bg-surface-hover"
               }`}
             >
-              전체 ({upcomingEvents.length})
+              전체 ({displayEvents.length})
             </button>
             {allMonths.map((month) => {
               const count = eventCountByMonth[month] || 0;

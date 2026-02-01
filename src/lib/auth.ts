@@ -29,7 +29,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       }
       return true;
     },
-    async jwt({ token, user, account, trigger }) {
+    async jwt({ token, user, account }) {
       // Initial sign in
       if (account && user) {
         const dbUser = await prisma.user.findUnique({
@@ -44,34 +44,43 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         };
       }
 
-      // On subsequent requests, fetch user from DB if id is missing
-      if (!token.id && token.email) {
+      // On subsequent requests, verify user still exists in database
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { id: true, role: true },
+        });
+
+        // If user no longer exists (deleted), clear the user data from token
+        if (!dbUser) {
+          // Remove user-specific data to invalidate the session
+          delete token.id;
+          delete token.role;
+          return token;
+        }
+
+        // Update role from DB (for role changes to take effect)
+        token.role = dbUser.role;
+      } else if (token.email) {
+        // Try to find user by email if id is missing
         const dbUser = await prisma.user.findUnique({
           where: { email: token.email },
+          select: { id: true, role: true },
         });
         if (dbUser) {
           token.id = dbUser.id;
           token.role = dbUser.role;
         }
-      }
-
-      // Refresh role from DB periodically (for role changes to take effect)
-      if (token.id && !token.role) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { role: true },
-        });
-        if (dbUser) {
-          token.role = dbUser.role;
-        }
+        // If user doesn't exist by email, token stays without id
       }
 
       return token;
     },
     async session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        // Set user id - empty string if user was deleted (token.id is undefined)
+        session.user.id = (token.id as string) || "";
+        session.user.role = (token.role as string) || "";
       }
       return session;
     },

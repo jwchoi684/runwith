@@ -37,28 +37,67 @@ export default async function AdminPage() {
     },
   });
 
-  // Calculate DAU (users who created records today)
   const today = new Date();
   today.setHours(0, 0, 0, 0);
-  const dau = await prisma.runningLog.groupBy({
+
+  // Calculate DAU trend (last 30 days) - based on access logs
+  const thirtyDaysAgo = new Date(today);
+  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+  const dauTrendRaw = await prisma.accessLog.groupBy({
     by: ["userId"],
     where: {
-      createdAt: {
-        gte: today,
-      },
+      createdAt: { gte: thirtyDaysAgo },
     },
+    _min: { createdAt: true },
   });
 
-  // Calculate MAU (users who created records this month)
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  const mau = await prisma.runningLog.groupBy({
-    by: ["userId"],
-    where: {
-      createdAt: {
-        gte: monthStart,
-      },
-    },
+  // Group by date for DAU trend
+  const dauByDate: Record<string, Set<string>> = {};
+  const accessLogsForDau = await prisma.accessLog.findMany({
+    where: { createdAt: { gte: thirtyDaysAgo } },
+    select: { userId: true, createdAt: true },
   });
+
+  accessLogsForDau.forEach((log) => {
+    const dateKey = log.createdAt.toISOString().split("T")[0];
+    if (!dauByDate[dateKey]) dauByDate[dateKey] = new Set();
+    dauByDate[dateKey].add(log.userId);
+  });
+
+  const dauTrend = [];
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(date.getDate() - i);
+    const dateKey = date.toISOString().split("T")[0];
+    dauTrend.push({
+      date: dateKey,
+      count: dauByDate[dateKey]?.size || 0,
+    });
+  }
+
+  // Calculate MAU trend (last 12 months)
+  const mauTrend = [];
+  for (let i = 11; i >= 0; i--) {
+    const monthDate = new Date(today.getFullYear(), today.getMonth() - i, 1);
+    const monthEnd = new Date(today.getFullYear(), today.getMonth() - i + 1, 0, 23, 59, 59);
+
+    const monthUsers = await prisma.accessLog.groupBy({
+      by: ["userId"],
+      where: {
+        createdAt: {
+          gte: monthDate,
+          lte: monthEnd,
+        },
+      },
+    });
+
+    mauTrend.push({
+      month: `${monthDate.getFullYear()}-${String(monthDate.getMonth() + 1).padStart(2, "0")}`,
+      label: `${monthDate.getMonth() + 1}월`,
+      count: monthUsers.length,
+    });
+  }
 
   // Fetch stats
   const stats = {
@@ -66,8 +105,6 @@ export default async function AdminPage() {
     totalRecords: await prisma.runningLog.count(),
     totalCrews: await prisma.crew.count(),
     totalEvents: await prisma.marathonEvent.count(),
-    dau: dau.length,
-    mau: mau.length,
   };
 
   // Fetch all records (more for admin view)
@@ -169,12 +206,6 @@ export default async function AdminPage() {
     },
   });
 
-  // Fetch API logs (최근 100개)
-  const apiLogs = await prisma.apiLog.findMany({
-    take: 100,
-    orderBy: { createdAt: "desc" },
-  });
-
   // Calculate page view statistics (top pages)
   const pageStatsRaw = await prisma.accessLog.groupBy({
     by: ["path"],
@@ -192,22 +223,6 @@ export default async function AdminPage() {
     count: stat._count.id,
   }));
 
-  // Calculate API call statistics (top APIs)
-  const apiStatsRaw = await prisma.apiLog.groupBy({
-    by: ["path", "method"],
-    _count: { id: true },
-    _avg: { duration: true },
-    orderBy: { _count: { id: "desc" } },
-    take: 10,
-  });
-
-  const apiStats = apiStatsRaw.map((stat) => ({
-    path: stat.path,
-    method: stat.method,
-    count: stat._count.id,
-    avgDuration: stat._avg.duration ? Math.round(stat._avg.duration) : null,
-  }));
-
   return (
     <AdminDashboard
       users={users}
@@ -219,9 +234,9 @@ export default async function AdminPage() {
       crewMembers={crewMembers}
       paceGroups={paceGroups}
       accessLogs={accessLogs}
-      apiLogs={apiLogs}
       pageStats={pageStats}
-      apiStats={apiStats}
+      dauTrend={dauTrend}
+      mauTrend={mauTrend}
       currentUserId={session.user.id}
     />
   );

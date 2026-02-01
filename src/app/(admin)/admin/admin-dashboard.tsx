@@ -193,6 +193,8 @@ export function AdminDashboard({
   });
   const [isSavingEvent, setIsSavingEvent] = useState(false);
   const [deletingEventId, setDeletingEventId] = useState<string | null>(null);
+  const [selectedEventIds, setSelectedEventIds] = useState<Set<string>>(new Set());
+  const [isDeletingBulk, setIsDeletingBulk] = useState(false);
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
   const selectedCrew = crews.find((c) => c.id === selectedCrewId);
@@ -314,6 +316,54 @@ export function AdminDashboard({
       alert("삭제에 실패했습니다.");
     } finally {
       setDeletingEventId(null);
+    }
+  };
+
+  const toggleEventSelection = (eventId: string) => {
+    const newSelection = new Set(selectedEventIds);
+    if (newSelection.has(eventId)) {
+      newSelection.delete(eventId);
+    } else {
+      newSelection.add(eventId);
+    }
+    setSelectedEventIds(newSelection);
+  };
+
+  const toggleAllEvents = () => {
+    if (selectedEventIds.size === filteredEvents.length) {
+      setSelectedEventIds(new Set());
+    } else {
+      setSelectedEventIds(new Set(filteredEvents.map(e => e.id)));
+    }
+  };
+
+  const handleBulkDeleteEvents = async () => {
+    if (selectedEventIds.size === 0) return;
+
+    if (!confirm(`선택한 ${selectedEventIds.size}개의 대회를 삭제하시겠습니까? 연결된 기록은 유지됩니다.`)) return;
+
+    setIsDeletingBulk(true);
+    try {
+      const response = await fetch("/api/admin/events/bulk-delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ eventIds: Array.from(selectedEventIds) }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setSelectedEventIds(new Set());
+        router.refresh();
+        alert(`${data.deletedCount}개의 대회가 삭제되었습니다.`);
+      } else {
+        const data = await response.json();
+        alert(data.error || "삭제에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("Failed to bulk delete events:", error);
+      alert("삭제에 실패했습니다.");
+    } finally {
+      setIsDeletingBulk(false);
     }
   };
 
@@ -899,62 +949,135 @@ export function AdminDashboard({
                 </Button>
               </div>
 
+              {/* Bulk Actions Bar */}
+              {selectedEventIds.size > 0 && (
+                <div className="flex items-center justify-between bg-primary/10 border border-primary/20 rounded-xl px-4 py-3">
+                  <span className="text-sm font-medium text-primary">
+                    {selectedEventIds.size}개 선택됨
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setSelectedEventIds(new Set())}
+                      className="px-3 py-1.5 text-sm text-text-secondary hover:text-text-primary transition-colors"
+                    >
+                      선택 해제
+                    </button>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={handleBulkDeleteEvents}
+                      disabled={isDeletingBulk}
+                      className="bg-error/10 text-error hover:bg-error/20 border-error/20"
+                    >
+                      {isDeletingBulk ? (
+                        <>
+                          <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block mr-1" />
+                          삭제 중...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="w-4 h-4 mr-1" />
+                          선택 삭제
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              )}
+
               <Card className="divide-y divide-border">
                 {filteredEvents.length === 0 ? (
                   <p className="text-center text-text-tertiary py-8">대회가 없습니다</p>
                 ) : (
-                  filteredEvents.map((event) => (
-                    <div key={event.id} className="flex items-center gap-3 p-4">
-                      <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center">
-                        <Trophy className="w-6 h-6 text-warning" />
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium text-text-primary truncate">{event.name}</p>
-                          {event.isOfficial && (
-                            <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-3 mt-1 text-sm text-text-tertiary">
-                          {event.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
-                              {event.location}
-                            </span>
-                          )}
-                          <span>{formatDistance(event.distance)}</span>
-                          {event.date && (
-                            <span className="flex items-center gap-1">
-                              <CalendarDays className="w-3 h-3" />
-                              {formatDate(event.date)}
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-xs text-text-tertiary mt-1">
-                          기록 {event._count.runningLogs}개
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <button
-                          onClick={() => openEventModal(event)}
-                          className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          onClick={() => handleDeleteEvent(event.id)}
-                          disabled={deletingEventId === event.id}
-                          className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
-                        >
-                          {deletingEventId === event.id ? (
-                            <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
-                          ) : (
-                            <Trash2 className="w-4 h-4" />
-                          )}
-                        </button>
-                      </div>
+                  <>
+                    {/* Select All Header */}
+                    <div className="flex items-center gap-3 px-4 py-3 bg-surface-elevated">
+                      <button
+                        onClick={toggleAllEvents}
+                        className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
+                          selectedEventIds.size === filteredEvents.length && filteredEvents.length > 0
+                            ? "bg-primary border-primary text-white"
+                            : selectedEventIds.size > 0
+                            ? "bg-primary/50 border-primary text-white"
+                            : "border-border hover:border-text-secondary"
+                        }`}
+                      >
+                        {selectedEventIds.size > 0 && (
+                          <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                          </svg>
+                        )}
+                      </button>
+                      <span className="text-sm text-text-secondary">전체 선택</span>
                     </div>
-                  ))
+
+                    {filteredEvents.map((event) => (
+                      <div key={event.id} className="flex items-center gap-3 p-4">
+                        <button
+                          onClick={() => toggleEventSelection(event.id)}
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors shrink-0 ${
+                            selectedEventIds.has(event.id)
+                              ? "bg-primary border-primary text-white"
+                              : "border-border hover:border-text-secondary"
+                          }`}
+                        >
+                          {selectedEventIds.has(event.id) && (
+                            <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </button>
+                        <div className="w-12 h-12 rounded-xl bg-warning/10 flex items-center justify-center shrink-0">
+                          <Trophy className="w-6 h-6 text-warning" />
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-text-primary truncate">{event.name}</p>
+                            {event.isOfficial && (
+                              <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-3 mt-1 text-sm text-text-tertiary flex-wrap">
+                            {event.location && (
+                              <span className="flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                {event.location}
+                              </span>
+                            )}
+                            <span>{formatDistance(event.distance)}</span>
+                            {event.date && (
+                              <span className="flex items-center gap-1">
+                                <CalendarDays className="w-3 h-3" />
+                                {formatDate(event.date)}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs text-text-tertiary mt-1">
+                            기록 {event._count.runningLogs}개
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <button
+                            onClick={() => openEventModal(event)}
+                            className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                          >
+                            <Edit2 className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteEvent(event.id)}
+                            disabled={deletingEventId === event.id}
+                            className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
+                          >
+                            {deletingEventId === event.id ? (
+                              <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                            ) : (
+                              <Trash2 className="w-4 h-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </>
                 )}
               </Card>
             </div>

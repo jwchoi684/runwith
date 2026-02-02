@@ -242,7 +242,7 @@ interface AdminDashboardProps {
   currentUserId: string;
 }
 
-type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "access-logs" | "user-detail" | "crew-detail";
+type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "access-logs" | "user-detail" | "crew-detail" | "event-detail";
 
 const coursePresets = ["Full", "Half", "10K", "5K"];
 
@@ -297,9 +297,8 @@ export function AdminDashboard({
   const [eventFilterYear, setEventFilterYear] = useState<number | null>(null);
   const [eventFilterMonth, setEventFilterMonth] = useState<number | null>(null);
 
-  // Event registrations modal state
-  const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
-  const [selectedEventForRegistrations, setSelectedEventForRegistrations] = useState<MarathonEvent | null>(null);
+  // Event detail state
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
 
   // Import events state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -336,6 +335,7 @@ export function AdminDashboard({
 
   const selectedUser = users.find((u) => u.id === selectedUserId);
   const selectedCrew = crews.find((c) => c.id === selectedCrewId);
+  const selectedEvent = events.find((e) => e.id === selectedEventId);
   const userRecords = recentRecords.filter((r) => r.user.id === selectedUserId);
 
   // 선택된 사용자의 접속 로그 필터링
@@ -977,7 +977,8 @@ export function AdminDashboard({
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition-colors ${
                 activeView === item.id ||
                 (item.id === "users" && activeView === "user-detail") ||
-                (item.id === "crews" && activeView === "crew-detail")
+                (item.id === "crews" && activeView === "crew-detail") ||
+                (item.id === "events" && activeView === "event-detail")
                   ? "bg-primary/10 text-primary"
                   : "text-text-secondary hover:bg-surface-elevated"
               }`}
@@ -1369,107 +1370,6 @@ export function AdminDashboard({
                 className="flex-1"
               >
                 {isImporting ? "가져오는 중..." : `${selectedImportIds.size}개 대회 가져오기`}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Event Registrations Modal */}
-      {showRegistrationsModal && selectedEventForRegistrations && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowRegistrationsModal(false)} />
-          <div className="relative bg-surface rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div>
-                <h2 className="text-lg font-bold text-text-primary">대회 참가 신청 목록</h2>
-                <p className="text-sm text-text-secondary mt-1">{selectedEventForRegistrations.name}</p>
-              </div>
-              <button
-                onClick={() => setShowRegistrationsModal(false)}
-                className="p-2 text-text-tertiary hover:text-text-primary rounded-lg hover:bg-surface-elevated"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <div className="flex-1 overflow-y-auto p-6">
-              {selectedEventForRegistrations.userEvents.length === 0 ? (
-                <div className="text-center py-12">
-                  <Users className="w-12 h-12 text-text-disabled mx-auto mb-3" />
-                  <p className="text-text-tertiary">신청자가 없습니다</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm text-text-secondary mb-4">
-                    <span>총 {selectedEventForRegistrations.userEvents.length}명 신청</span>
-                  </div>
-                  {selectedEventForRegistrations.userEvents.map((registration) => (
-                    <div
-                      key={registration.id}
-                      className="flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/30 transition-colors"
-                    >
-                      {registration.user.image ? (
-                        <Image
-                          src={registration.user.image}
-                          alt={registration.user.name || ""}
-                          width={44}
-                          height={44}
-                          className="rounded-full"
-                        />
-                      ) : (
-                        <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
-                          <Users className="w-5 h-5 text-primary" />
-                        </div>
-                      )}
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-text-primary">
-                            {registration.user.name || "이름 없음"}
-                          </span>
-                          {registration.course && (
-                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
-                              {registration.course}
-                            </span>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-sm text-text-tertiary">
-                            {registration.user.email}
-                          </span>
-                        </div>
-                        {registration.user.crews.length > 0 && (
-                          <div className="flex items-center gap-2 mt-2">
-                            <Users2 className="w-3.5 h-3.5 text-text-tertiary" />
-                            <div className="flex flex-wrap gap-1">
-                              {registration.user.crews.map((membership) => (
-                                <span
-                                  key={membership.crew.id}
-                                  className="px-2 py-0.5 bg-surface-elevated text-text-secondary text-xs rounded-full"
-                                >
-                                  {membership.crew.name}
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                      <div className="text-xs text-text-tertiary">
-                        {new Date(registration.createdAt).toLocaleDateString("ko-KR")}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="p-6 border-t border-border">
-              <Button
-                variant="secondary"
-                onClick={() => setShowRegistrationsModal(false)}
-                className="w-full"
-              >
-                닫기
               </Button>
             </div>
           </div>
@@ -2408,7 +2308,13 @@ export function AdminDashboard({
                               </svg>
                             )}
                           </button>
-                          <div className="flex-1 min-w-0">
+                          <div
+                            className="flex-1 min-w-0 cursor-pointer"
+                            onClick={() => {
+                              setSelectedEventId(event.id);
+                              setActiveView("event-detail");
+                            }}
+                          >
                             <div className="flex items-center gap-2 flex-wrap mb-1">
                               <span className="font-medium text-text-primary">{event.name}</span>
                               {event.isOfficial && (
@@ -2430,43 +2336,37 @@ export function AdminDashboard({
                               {event.location && event.date && <span className="mx-1">·</span>}
                               {event.date && <span>{formatDate(event.date)}</span>}
                             </div>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-3 text-xs text-text-tertiary">
-                                <span>기록 {event._count.runningLogs}개</span>
-                                <button
-                                  onClick={() => {
-                                    setSelectedEventForRegistrations(event);
-                                    setShowRegistrationsModal(true);
-                                  }}
-                                  className={`px-2 py-1 rounded-lg transition-colors ${
-                                    event._count.userEvents > 0
-                                      ? "bg-primary/10 text-primary hover:bg-primary/20"
-                                      : "bg-surface-elevated text-text-tertiary"
-                                  }`}
-                                >
-                                  신청 {event._count.userEvents}명
-                                </button>
-                              </div>
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => openEventModal(event)}
-                                  className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                                >
-                                  <Edit2 className="w-4 h-4" />
-                                </button>
-                                <button
-                                  onClick={() => handleDeleteEvent(event.id)}
-                                  disabled={deletingEventId === event.id}
-                                  className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
-                                >
-                                  {deletingEventId === event.id ? (
-                                    <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
-                                  ) : (
-                                    <Trash2 className="w-4 h-4" />
-                                  )}
-                                </button>
-                              </div>
+                            <div className="flex items-center gap-3 text-xs text-text-tertiary">
+                              <span>기록 {event._count.runningLogs}개</span>
+                              <span className={event._count.userEvents > 0 ? "text-primary font-medium" : ""}>
+                                신청 {event._count.userEvents}명
+                              </span>
                             </div>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openEventModal(event);
+                              }}
+                              className="p-2 text-text-tertiary hover:text-primary hover:bg-primary/10 rounded-lg transition-colors"
+                            >
+                              <Edit2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteEvent(event.id);
+                              }}
+                              disabled={deletingEventId === event.id}
+                              className="p-2 text-text-tertiary hover:text-error hover:bg-error/10 rounded-lg transition-colors disabled:opacity-50"
+                            >
+                              {deletingEventId === event.id ? (
+                                <span className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin inline-block" />
+                              ) : (
+                                <Trash2 className="w-4 h-4" />
+                              )}
+                            </button>
                           </div>
                         </div>
                       </Card>
@@ -2511,9 +2411,13 @@ export function AdminDashboard({
                           {filteredEvents.map((event) => (
                             <tr
                               key={event.id}
-                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated transition-colors"
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated transition-colors cursor-pointer"
+                              onClick={() => {
+                                setSelectedEventId(event.id);
+                                setActiveView("event-detail");
+                              }}
                             >
-                              <td className="px-4 py-3">
+                              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                                 <button
                                   onClick={() => toggleEventSelection(event.id)}
                                   className={`w-5 h-5 rounded border-2 flex items-center justify-center transition-colors ${
@@ -2549,21 +2453,15 @@ export function AdminDashboard({
                               <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(event.date)}</td>
                               <td className="px-4 py-3 text-center text-sm text-text-secondary">{event._count.runningLogs}</td>
                               <td className="px-4 py-3 text-center">
-                                <button
-                                  onClick={() => {
-                                    setSelectedEventForRegistrations(event);
-                                    setShowRegistrationsModal(true);
-                                  }}
-                                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
-                                    event._count.userEvents > 0
-                                      ? "bg-primary/10 text-primary hover:bg-primary/20"
-                                      : "bg-surface-elevated text-text-tertiary hover:bg-border"
-                                  }`}
-                                >
+                                <span className={`px-3 py-1 rounded-lg text-sm font-medium ${
+                                  event._count.userEvents > 0
+                                    ? "bg-primary/10 text-primary"
+                                    : "text-text-tertiary"
+                                }`}>
                                   {event._count.userEvents}명
-                                </button>
+                                </span>
                               </td>
-                              <td className="px-4 py-3">
+                              <td className="px-4 py-3" onClick={(e) => e.stopPropagation()}>
                                 <div className="flex items-center justify-center gap-1">
                                   <button
                                     onClick={() => openEventModal(event)}
@@ -3368,6 +3266,160 @@ export function AdminDashboard({
                               {member.role === "admin" ? "관리자" : "멤버"}
                             </span>
                           )}
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </Card>
+              </section>
+            </div>
+          )}
+
+          {/* Event Detail View */}
+          {activeView === "event-detail" && selectedEvent && (
+            <div className="space-y-4 sm:space-y-6">
+              <button
+                onClick={() => navigateTo("events")}
+                className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" />
+                <span className="text-sm">대회 목록으로</span>
+              </button>
+
+              {/* Event Info Card */}
+              <Card className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary flex items-center justify-center text-white shrink-0">
+                    <Trophy className="w-8 h-8 sm:w-10 sm:h-10" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
+                      <h2 className="text-lg sm:text-xl font-bold text-text-primary">{selectedEvent.name}</h2>
+                      {selectedEvent.isOfficial && (
+                        <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full">공식</span>
+                      )}
+                      {selectedEvent.region === "international" ? (
+                        <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">해외</span>
+                      ) : (
+                        <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">국내</span>
+                      )}
+                    </div>
+                    <div className="space-y-1 text-sm text-text-secondary">
+                      {selectedEvent.date && (
+                        <p className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-text-tertiary" />
+                          {formatDate(selectedEvent.date)}
+                        </p>
+                      )}
+                      {selectedEvent.location && (
+                        <p className="flex items-center gap-2">
+                          <MapPin className="w-4 h-4 text-text-tertiary" />
+                          {selectedEvent.location}
+                        </p>
+                      )}
+                      {selectedEvent.courses && (
+                        <p className="flex items-center gap-2">
+                          <Activity className="w-4 h-4 text-text-tertiary" />
+                          종목: {selectedEvent.courses}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                  <div className="flex gap-2 sm:flex-col">
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => openEventModal(selectedEvent)}
+                      className="flex-1 sm:flex-none"
+                    >
+                      <Edit2 className="w-4 h-4 mr-1" />
+                      수정
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Stats */}
+              <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                <Card className="text-center py-4">
+                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{selectedEvent._count.runningLogs}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">등록된 기록</p>
+                </Card>
+                <Card className="text-center py-4">
+                  <p className="text-xl sm:text-2xl font-bold text-primary">{selectedEvent._count.userEvents}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">참가 신청</p>
+                </Card>
+              </div>
+
+              {/* Registrations List */}
+              <section>
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
+                  <Users className="w-5 h-5 text-primary" />
+                  참가 신청 목록 ({selectedEvent.userEvents.length}명)
+                </h3>
+                <Card className="divide-y divide-border">
+                  {selectedEvent.userEvents.length === 0 ? (
+                    <div className="text-center py-12">
+                      <Users className="w-12 h-12 text-text-disabled mx-auto mb-3" />
+                      <p className="text-text-tertiary">신청자가 없습니다</p>
+                    </div>
+                  ) : (
+                    selectedEvent.userEvents.map((registration) => (
+                      <div
+                        key={registration.id}
+                        className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 hover:bg-surface-elevated transition-colors cursor-pointer"
+                        onClick={() => openUserDetail(registration.user.id)}
+                      >
+                        {registration.user.image ? (
+                          <Image
+                            src={registration.user.image}
+                            alt={registration.user.name || ""}
+                            width={44}
+                            height={44}
+                            className="rounded-full shrink-0"
+                          />
+                        ) : (
+                          <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                            <Users className="w-5 h-5 text-primary" />
+                          </div>
+                        )}
+                        <div className="flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-1 sm:gap-2">
+                            <span className="font-medium text-text-primary truncate">
+                              {registration.user.name || "이름 없음"}
+                            </span>
+                            {registration.course && (
+                              <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                                {registration.course}
+                              </span>
+                            )}
+                          </div>
+                          <p className="text-xs sm:text-sm text-text-tertiary truncate">
+                            {registration.user.email}
+                          </p>
+                          {registration.user.crews.length > 0 && (
+                            <div className="flex items-center gap-1 mt-1 overflow-hidden">
+                              <Users2 className="w-3 h-3 text-text-tertiary shrink-0" />
+                              <div className="flex flex-wrap gap-1">
+                                {registration.user.crews.slice(0, 2).map((membership) => (
+                                  <span
+                                    key={membership.crew.id}
+                                    className="px-1.5 py-0.5 bg-surface-elevated text-text-secondary text-[10px] sm:text-xs rounded-full truncate max-w-[80px] sm:max-w-none"
+                                  >
+                                    {membership.crew.name}
+                                  </span>
+                                ))}
+                                {registration.user.crews.length > 2 && (
+                                  <span className="text-[10px] sm:text-xs text-text-tertiary">
+                                    +{registration.user.crews.length - 2}
+                                  </span>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                        <div className="text-[10px] sm:text-xs text-text-tertiary shrink-0">
+                          {new Date(registration.createdAt).toLocaleDateString("ko-KR")}
                         </div>
                       </div>
                     ))

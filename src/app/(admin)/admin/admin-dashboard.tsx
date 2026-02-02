@@ -41,6 +41,7 @@ import {
   History,
   Upload,
   FileSpreadsheet,
+  ClipboardList,
 } from "lucide-react";
 
 interface User {
@@ -242,7 +243,7 @@ interface AdminDashboardProps {
   currentUserId: string;
 }
 
-type View = "dashboard" | "users" | "records" | "crews" | "events" | "rankings" | "pace-groups" | "access-logs" | "user-detail" | "crew-detail" | "event-detail";
+type View = "dashboard" | "users" | "records" | "crews" | "events" | "registrations" | "rankings" | "pace-groups" | "access-logs" | "user-detail" | "crew-detail" | "event-detail";
 
 const coursePresets = ["Full", "Half", "10K", "5K"];
 
@@ -348,6 +349,18 @@ export function AdminDashboard({
     return acc;
   }, {} as Record<string, number>);
   const sortedUserPageViews = Object.entries(userPageViews).sort((a, b) => b[1] - a[1]);
+
+  // 전체 대회 신청 내역 (모든 이벤트에서 flatMap)
+  const allRegistrations = events.flatMap((event) =>
+    event.userEvents.map((registration) => ({
+      ...registration,
+      event: {
+        id: event.id,
+        name: event.name,
+        date: event.date,
+      },
+    }))
+  ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
   // Filter rankings by crew
   const filteredRankings = selectedRankingCrew === "all"
@@ -950,6 +963,7 @@ export function AdminDashboard({
     { id: "records" as View, label: "기록 관리", icon: FileText },
     { id: "crews" as View, label: "크루 관리", icon: Users2 },
     { id: "events" as View, label: "대회 관리", icon: Trophy },
+    { id: "registrations" as View, label: "대회 신청 내역", icon: ClipboardList },
     { id: "pace-groups" as View, label: "페이스 차트", icon: Gauge },
     { id: "rankings" as View, label: "Ranking", icon: BarChart3 },
     { id: "access-logs" as View, label: "접속 로그", icon: History },
@@ -2481,6 +2495,183 @@ export function AdminDashboard({
                                     )}
                                   </button>
                                 </div>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </Card>
+                </>
+              )}
+            </div>
+          )}
+
+          {/* Registrations View - 대회 신청 내역 */}
+          {activeView === "registrations" && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg sm:text-xl font-bold text-text-primary flex items-center gap-2">
+                  <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
+                  대회 신청 내역
+                </h2>
+                <span className="text-sm text-text-tertiary">총 {allRegistrations.length}건</span>
+              </div>
+
+              {allRegistrations.length === 0 ? (
+                <Card className="text-center py-12">
+                  <ClipboardList className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
+                  <p className="text-text-secondary">대회 신청 내역이 없습니다</p>
+                </Card>
+              ) : (
+                <>
+                  {/* Mobile Card View */}
+                  <div className="md:hidden space-y-3">
+                    {allRegistrations.map((registration) => (
+                      <Card
+                        key={registration.id}
+                        className="p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
+                        onClick={() => openUserDetail(registration.user.id)}
+                      >
+                        <div className="flex items-center gap-3 mb-3">
+                          {registration.user.image ? (
+                            <Image src={registration.user.image} alt="" width={40} height={40} className="rounded-full" />
+                          ) : (
+                            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium">
+                              {registration.user.name?.[0]?.toUpperCase() || "U"}
+                            </div>
+                          )}
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-text-primary truncate">{registration.user.name || "이름 없음"}</p>
+                            <p className="text-xs text-text-tertiary truncate">{registration.user.email}</p>
+                          </div>
+                          {registration.course && (
+                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full shrink-0">
+                              {registration.course}
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-1.5 text-sm">
+                          <div className="flex items-center justify-between">
+                            <span className="text-text-tertiary flex items-center gap-1">
+                              <Trophy className="w-3.5 h-3.5" />
+                              대회명
+                            </span>
+                            <span className="font-medium text-text-primary truncate ml-2 max-w-[60%] text-right">{registration.event.name}</span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-text-tertiary flex items-center gap-1">
+                              <Users2 className="w-3.5 h-3.5" />
+                              크루
+                            </span>
+                            <span className="text-text-secondary">
+                              {registration.user.crews.length > 0
+                                ? registration.user.crews.map((c) => c.crew.name).join(", ")
+                                : "-"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-text-tertiary flex items-center gap-1">
+                              <Calendar className="w-3.5 h-3.5" />
+                              대회 날짜
+                            </span>
+                            <span className="text-text-secondary">
+                              {registration.event.date ? formatDate(registration.event.date) : "-"}
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <span className="text-text-tertiary flex items-center gap-1">
+                              <Clock className="w-3.5 h-3.5" />
+                              신청일
+                            </span>
+                            <span className="text-text-secondary">{formatDate(registration.createdAt)}</span>
+                          </div>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+
+                  {/* Desktop Table View */}
+                  <Card className="overflow-hidden hidden md:block">
+                    <div className="overflow-x-auto">
+                      <table className="w-full min-w-[700px]">
+                        <thead>
+                          <tr className="bg-surface-elevated border-b border-border">
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">신청일</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회명</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">이름</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">크루</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">종목</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회 날짜</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {allRegistrations.map((registration) => (
+                            <tr
+                              key={registration.id}
+                              onClick={() => openUserDetail(registration.user.id)}
+                              className="border-b border-border last:border-b-0 hover:bg-surface-elevated cursor-pointer transition-colors"
+                            >
+                              <td className="px-4 py-3 text-sm text-text-tertiary">
+                                {formatDate(registration.createdAt)}
+                              </td>
+                              <td className="px-4 py-3">
+                                <span
+                                  className="font-medium text-text-primary hover:text-primary cursor-pointer"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedEventId(registration.event.id);
+                                    setActiveView("event-detail");
+                                  }}
+                                >
+                                  {registration.event.name}
+                                </span>
+                              </td>
+                              <td className="px-4 py-3">
+                                <div className="flex items-center gap-3">
+                                  {registration.user.image ? (
+                                    <Image src={registration.user.image} alt="" width={32} height={32} className="rounded-full" />
+                                  ) : (
+                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-medium text-sm">
+                                      {registration.user.name?.[0]?.toUpperCase() || "U"}
+                                    </div>
+                                  )}
+                                  <div>
+                                    <span className="font-medium text-text-primary">{registration.user.name || "이름 없음"}</span>
+                                    <p className="text-xs text-text-tertiary">{registration.user.email}</p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-secondary">
+                                {registration.user.crews.length > 0 ? (
+                                  <div className="flex flex-wrap gap-1">
+                                    {registration.user.crews.slice(0, 2).map((c) => (
+                                      <span
+                                        key={c.crew.id}
+                                        className="px-2 py-0.5 bg-surface-elevated text-text-secondary text-xs rounded-full"
+                                      >
+                                        {c.crew.name}
+                                      </span>
+                                    ))}
+                                    {registration.user.crews.length > 2 && (
+                                      <span className="text-xs text-text-tertiary">+{registration.user.crews.length - 2}</span>
+                                    )}
+                                  </div>
+                                ) : (
+                                  <span className="text-text-tertiary">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-center">
+                                {registration.course ? (
+                                  <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                                    {registration.course}
+                                  </span>
+                                ) : (
+                                  <span className="text-text-tertiary">-</span>
+                                )}
+                              </td>
+                              <td className="px-4 py-3 text-sm text-text-secondary">
+                                {registration.event.date ? formatDate(registration.event.date) : "-"}
                               </td>
                             </tr>
                           ))}

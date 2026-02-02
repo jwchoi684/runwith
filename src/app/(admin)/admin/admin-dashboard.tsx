@@ -108,6 +108,24 @@ interface Crew {
   };
 }
 
+interface EventRegistrant {
+  id: string;
+  course: string | null;
+  createdAt: Date;
+  user: {
+    id: string;
+    name: string | null;
+    email: string | null;
+    image: string | null;
+    crews: {
+      crew: {
+        id: string;
+        name: string;
+      };
+    }[];
+  };
+}
+
 interface MarathonEvent {
   id: string;
   name: string;
@@ -120,7 +138,9 @@ interface MarathonEvent {
   createdAt: Date;
   _count: {
     runningLogs: number;
+    userEvents: number;
   };
+  userEvents: EventRegistrant[];
 }
 
 interface ScrapedEvent {
@@ -276,6 +296,10 @@ export function AdminDashboard({
   // Event filter state
   const [eventFilterYear, setEventFilterYear] = useState<number | null>(null);
   const [eventFilterMonth, setEventFilterMonth] = useState<number | null>(null);
+
+  // Event registrations modal state
+  const [showRegistrationsModal, setShowRegistrationsModal] = useState(false);
+  const [selectedEventForRegistrations, setSelectedEventForRegistrations] = useState<MarathonEvent | null>(null);
 
   // Import events state
   const [showImportModal, setShowImportModal] = useState(false);
@@ -1351,6 +1375,107 @@ export function AdminDashboard({
         </div>
       )}
 
+      {/* Event Registrations Modal */}
+      {showRegistrationsModal && selectedEventForRegistrations && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/50" onClick={() => setShowRegistrationsModal(false)} />
+          <div className="relative bg-surface rounded-2xl w-full max-w-2xl max-h-[80vh] flex flex-col shadow-xl">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div>
+                <h2 className="text-lg font-bold text-text-primary">대회 참가 신청 목록</h2>
+                <p className="text-sm text-text-secondary mt-1">{selectedEventForRegistrations.name}</p>
+              </div>
+              <button
+                onClick={() => setShowRegistrationsModal(false)}
+                className="p-2 text-text-tertiary hover:text-text-primary rounded-lg hover:bg-surface-elevated"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto p-6">
+              {selectedEventForRegistrations.userEvents.length === 0 ? (
+                <div className="text-center py-12">
+                  <Users className="w-12 h-12 text-text-disabled mx-auto mb-3" />
+                  <p className="text-text-tertiary">신청자가 없습니다</p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between text-sm text-text-secondary mb-4">
+                    <span>총 {selectedEventForRegistrations.userEvents.length}명 신청</span>
+                  </div>
+                  {selectedEventForRegistrations.userEvents.map((registration) => (
+                    <div
+                      key={registration.id}
+                      className="flex items-center gap-4 p-4 rounded-xl border border-border hover:border-primary/30 transition-colors"
+                    >
+                      {registration.user.image ? (
+                        <Image
+                          src={registration.user.image}
+                          alt={registration.user.name || ""}
+                          width={44}
+                          height={44}
+                          className="rounded-full"
+                        />
+                      ) : (
+                        <div className="w-11 h-11 rounded-full bg-primary/10 flex items-center justify-center">
+                          <Users className="w-5 h-5 text-primary" />
+                        </div>
+                      )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-text-primary">
+                            {registration.user.name || "이름 없음"}
+                          </span>
+                          {registration.course && (
+                            <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">
+                              {registration.course}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className="text-sm text-text-tertiary">
+                            {registration.user.email}
+                          </span>
+                        </div>
+                        {registration.user.crews.length > 0 && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <Users2 className="w-3.5 h-3.5 text-text-tertiary" />
+                            <div className="flex flex-wrap gap-1">
+                              {registration.user.crews.map((membership) => (
+                                <span
+                                  key={membership.crew.id}
+                                  className="px-2 py-0.5 bg-surface-elevated text-text-secondary text-xs rounded-full"
+                                >
+                                  {membership.crew.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                      <div className="text-xs text-text-tertiary">
+                        {new Date(registration.createdAt).toLocaleDateString("ko-KR")}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="p-6 border-t border-border">
+              <Button
+                variant="secondary"
+                onClick={() => setShowRegistrationsModal(false)}
+                className="w-full"
+              >
+                닫기
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pace Group Modal */}
       {showPaceGroupModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
@@ -2306,7 +2431,22 @@ export function AdminDashboard({
                               {event.date && <span>{formatDate(event.date)}</span>}
                             </div>
                             <div className="flex items-center justify-between">
-                              <span className="text-xs text-text-tertiary">기록 {event._count.runningLogs}개</span>
+                              <div className="flex items-center gap-3 text-xs text-text-tertiary">
+                                <span>기록 {event._count.runningLogs}개</span>
+                                <button
+                                  onClick={() => {
+                                    setSelectedEventForRegistrations(event);
+                                    setShowRegistrationsModal(true);
+                                  }}
+                                  className={`px-2 py-1 rounded-lg transition-colors ${
+                                    event._count.userEvents > 0
+                                      ? "bg-primary/10 text-primary hover:bg-primary/20"
+                                      : "bg-surface-elevated text-text-tertiary"
+                                  }`}
+                                >
+                                  신청 {event._count.userEvents}명
+                                </button>
+                              </div>
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => openEventModal(event)}
@@ -2363,6 +2503,7 @@ export function AdminDashboard({
                             <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">종목</th>
                             <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
                             <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">기록</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">신청</th>
                             <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">작업</th>
                           </tr>
                         </thead>
@@ -2407,6 +2548,21 @@ export function AdminDashboard({
                               <td className="px-4 py-3 text-sm text-text-primary">{event.courses || "-"}</td>
                               <td className="px-4 py-3 text-sm text-text-tertiary">{formatDate(event.date)}</td>
                               <td className="px-4 py-3 text-center text-sm text-text-secondary">{event._count.runningLogs}</td>
+                              <td className="px-4 py-3 text-center">
+                                <button
+                                  onClick={() => {
+                                    setSelectedEventForRegistrations(event);
+                                    setShowRegistrationsModal(true);
+                                  }}
+                                  className={`px-3 py-1 rounded-lg text-sm font-medium transition-colors ${
+                                    event._count.userEvents > 0
+                                      ? "bg-primary/10 text-primary hover:bg-primary/20"
+                                      : "bg-surface-elevated text-text-tertiary hover:bg-border"
+                                  }`}
+                                >
+                                  {event._count.userEvents}명
+                                </button>
+                              </td>
                               <td className="px-4 py-3">
                                 <div className="flex items-center justify-center gap-1">
                                   <button

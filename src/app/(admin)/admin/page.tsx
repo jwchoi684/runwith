@@ -151,7 +151,27 @@ export default async function AdminPage() {
     orderBy: { date: "desc" },
     include: {
       _count: {
-        select: { runningLogs: true },
+        select: { runningLogs: true, userEvents: true },
+      },
+      userEvents: {
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+              email: true,
+              image: true,
+              crews: {
+                include: {
+                  crew: {
+                    select: { id: true, name: true },
+                  },
+                },
+              },
+            },
+          },
+        },
+        orderBy: { createdAt: "desc" },
       },
     },
   });

@@ -334,6 +334,9 @@ export function AdminDashboard({
   const [isUploadingExcel, setIsUploadingExcel] = useState(false);
   const [excelUploadResult, setExcelUploadResult] = useState<{ success: number; failed: number; errors: string[] } | null>(null);
 
+  // Registration search state
+  const [registrationSearchQuery, setRegistrationSearchQuery] = useState("");
+
   const selectedUser = users.find((u) => u.id === selectedUserId);
   const selectedCrew = crews.find((c) => c.id === selectedCrewId);
   const selectedEvent = events.find((e) => e.id === selectedEventId);
@@ -361,6 +364,13 @@ export function AdminDashboard({
       },
     }))
   ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  // 대회명으로 필터링된 신청 내역
+  const filteredRegistrations = registrationSearchQuery.trim()
+    ? allRegistrations.filter((r) =>
+        r.event.name.toLowerCase().includes(registrationSearchQuery.toLowerCase())
+      )
+    : allRegistrations;
 
   // Filter rankings by crew
   const filteredRankings = selectedRankingCrew === "all"
@@ -2510,24 +2520,50 @@ export function AdminDashboard({
           {/* Registrations View - 대회 신청 내역 */}
           {activeView === "registrations" && (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <h2 className="text-lg sm:text-xl font-bold text-text-primary flex items-center gap-2">
                   <ClipboardList className="w-5 h-5 sm:w-6 sm:h-6 text-primary" />
                   대회 신청 내역
                 </h2>
-                <span className="text-sm text-text-tertiary">총 {allRegistrations.length}건</span>
+                <span className="text-sm text-text-tertiary">
+                  {registrationSearchQuery ? `${filteredRegistrations.length} / ` : ""}총 {allRegistrations.length}건
+                </span>
               </div>
 
-              {allRegistrations.length === 0 ? (
+              {/* 검색 입력 */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-tertiary" />
+                <input
+                  type="text"
+                  placeholder="대회명으로 검색..."
+                  value={registrationSearchQuery}
+                  onChange={(e) => setRegistrationSearchQuery(e.target.value)}
+                  className="w-full pl-10 pr-4 py-2.5 bg-surface border border-border rounded-xl text-text-primary placeholder:text-text-tertiary focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-colors"
+                />
+                {registrationSearchQuery && (
+                  <button
+                    onClick={() => setRegistrationSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-text-tertiary hover:text-text-primary transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                )}
+              </div>
+
+              {filteredRegistrations.length === 0 ? (
                 <Card className="text-center py-12">
                   <ClipboardList className="w-12 h-12 text-text-tertiary mx-auto mb-3" />
-                  <p className="text-text-secondary">대회 신청 내역이 없습니다</p>
+                  <p className="text-text-secondary">
+                    {registrationSearchQuery
+                      ? `"${registrationSearchQuery}" 검색 결과가 없습니다`
+                      : "대회 신청 내역이 없습니다"}
+                  </p>
                 </Card>
               ) : (
                 <>
                   {/* Mobile Card View */}
                   <div className="md:hidden space-y-3">
-                    {allRegistrations.map((registration) => (
+                    {filteredRegistrations.map((registration) => (
                       <Card
                         key={registration.id}
                         className="p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
@@ -2606,7 +2642,7 @@ export function AdminDashboard({
                           </tr>
                         </thead>
                         <tbody>
-                          {allRegistrations.map((registration) => (
+                          {filteredRegistrations.map((registration) => (
                             <tr
                               key={registration.id}
                               onClick={() => openUserDetail(registration.user.id)}

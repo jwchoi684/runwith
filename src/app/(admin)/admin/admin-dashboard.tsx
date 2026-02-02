@@ -2966,7 +2966,7 @@ export function AdminDashboard({
 
           {/* User Detail View */}
           {activeView === "user-detail" && selectedUser && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <button
                 onClick={() => navigateTo("users")}
                 className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
@@ -2975,64 +2975,68 @@ export function AdminDashboard({
                 <span className="text-sm">사용자 목록으로</span>
               </button>
 
-              <Card className="p-6">
-                <div className="flex items-start gap-4">
+              <Card className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
                   {selectedUser.image ? (
-                    <Image src={selectedUser.image} alt="" width={80} height={80} className="rounded-full" />
+                    <Image src={selectedUser.image} alt="" width={80} height={80} className="rounded-full w-16 h-16 sm:w-20 sm:h-20 shrink-0" />
                   ) : (
-                    <div className="w-20 h-20 rounded-full bg-primary flex items-center justify-center text-white text-2xl font-bold">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-primary flex items-center justify-center text-white text-xl sm:text-2xl font-bold shrink-0">
                       {selectedUser.name?.[0]?.toUpperCase() || "U"}
                     </div>
                   )}
-                  <div className="flex-1">
+                  <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1 flex-wrap">
-                      <h2 className="text-xl font-bold text-text-primary">{selectedUser.name || "Unknown"}</h2>
+                      <h2 className="text-lg sm:text-xl font-bold text-text-primary">{selectedUser.name || "Unknown"}</h2>
                       {selectedUser.role === "admin" && (
                         <span className="px-2 py-0.5 bg-primary/10 text-primary text-xs font-medium rounded-full">Admin</span>
                       )}
                       {getProviderBadge(selectedUser.accounts)}
                     </div>
-                    <p className="text-text-tertiary flex items-center gap-1">
-                      <Mail className="w-4 h-4" />
-                      {selectedUser.email}
+                    <p className="text-sm sm:text-base text-text-tertiary flex items-center gap-1 truncate">
+                      <Mail className="w-4 h-4 shrink-0" />
+                      <span className="truncate">{selectedUser.email}</span>
                     </p>
-                    <p className="text-sm text-text-tertiary mt-2 flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
+                    <p className="text-xs sm:text-sm text-text-tertiary mt-2 flex items-center gap-1">
+                      <Calendar className="w-4 h-4 shrink-0" />
                       가입일: {formatDate(selectedUser.createdAt)}
                     </p>
-                    <p className="text-sm text-text-tertiary mt-1 flex items-center gap-1">
-                      <Clock className="w-4 h-4" />
+                    <p className="text-xs sm:text-sm text-text-tertiary mt-1 flex items-center gap-1">
+                      <Clock className="w-4 h-4 shrink-0" />
                       마지막 접속: {selectedUser.lastAccessedAt ? formatRelativeTime(new Date(selectedUser.lastAccessedAt)) : "정보 없음"}
                     </p>
                   </div>
                 </div>
 
-                <div className="flex gap-2 mt-6 flex-wrap">
+                <div className="flex gap-2 mt-4 sm:mt-6 flex-wrap">
                   {selectedUser.role === "admin" ? (
                     <Button
                       variant="secondary"
+                      size="sm"
                       onClick={() => handlePromoteUser(selectedUser.id, "user")}
                       disabled={promotingUserId === selectedUser.id}
-                      className="text-error"
+                      className="text-error text-xs sm:text-sm"
                     >
                       <ShieldOff className="w-4 h-4 mr-1" />
-                      {promotingUserId === selectedUser.id ? "처리 중..." : "관리자 권한 해제"}
+                      {promotingUserId === selectedUser.id ? "처리 중..." : "관리자 해제"}
                     </Button>
                   ) : (
                     <Button
+                      size="sm"
                       onClick={() => handlePromoteUser(selectedUser.id, "admin")}
                       disabled={promotingUserId === selectedUser.id}
+                      className="text-xs sm:text-sm"
                     >
                       <Shield className="w-4 h-4 mr-1" />
-                      {promotingUserId === selectedUser.id ? "처리 중..." : "관리자로 승격"}
+                      {promotingUserId === selectedUser.id ? "처리 중..." : "관리자 승격"}
                     </Button>
                   )}
                   {selectedUser.id !== currentUserId && (
                     <Button
                       variant="secondary"
+                      size="sm"
                       onClick={() => handleDeleteUser(selectedUser.id, selectedUser.name)}
                       disabled={deletingUserId === selectedUser.id}
-                      className="text-error border-error/20 hover:bg-error/10"
+                      className="text-error border-error/20 hover:bg-error/10 text-xs sm:text-sm"
                     >
                       <Trash2 className="w-4 h-4 mr-1" />
                       {deletingUserId === selectedUser.id ? "삭제 중..." : "계정 삭제"}
@@ -3041,48 +3045,48 @@ export function AdminDashboard({
                 </div>
               </Card>
 
-              <div className="grid grid-cols-3 md:grid-cols-6 gap-4">
-                <Card className="text-center py-4">
-                  <p className="text-2xl font-bold text-text-primary">{selectedUser._count.runningLogs}</p>
-                  <p className="text-sm text-text-tertiary">러닝 기록</p>
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-2 sm:gap-4">
+                <Card className="text-center py-3 sm:py-4">
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">{selectedUser._count.runningLogs}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">러닝 기록</p>
                 </Card>
-                <Card className="text-center py-4">
-                  <p className="text-2xl font-bold text-text-primary">{selectedUser._count.crews}</p>
-                  <p className="text-sm text-text-tertiary">가입 크루</p>
+                <Card className="text-center py-3 sm:py-4">
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">{selectedUser._count.crews}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">가입 크루</p>
                 </Card>
-                <Card className="text-center py-4">
-                  <p className="text-2xl font-bold text-text-primary">{selectedUser._count.ownedCrews}</p>
-                  <p className="text-sm text-text-tertiary">운영 크루</p>
+                <Card className="text-center py-3 sm:py-4">
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">{selectedUser._count.ownedCrews}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">운영 크루</p>
                 </Card>
-                <Card className="text-center py-4">
-                  <p className="text-2xl font-bold text-primary">{userAccessLogs.length}</p>
-                  <p className="text-sm text-text-tertiary">접속 로그</p>
+                <Card className="text-center py-3 sm:py-4">
+                  <p className="text-lg sm:text-2xl font-bold text-primary">{userAccessLogs.length}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">접속 로그</p>
                 </Card>
-                <Card className="text-center py-4">
-                  <p className="text-2xl font-bold text-primary">{sortedUserPageViews.length}</p>
-                  <p className="text-sm text-text-tertiary">방문 페이지</p>
+                <Card className="text-center py-3 sm:py-4">
+                  <p className="text-lg sm:text-2xl font-bold text-primary">{sortedUserPageViews.length}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">방문 페이지</p>
                 </Card>
               </div>
 
               <section>
-                <h3 className="text-lg font-semibold text-text-primary mb-3">러닝 기록</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-2 sm:mb-3">러닝 기록</h3>
                 <Card className="divide-y divide-border">
                   {userRecords.length === 0 ? (
-                    <p className="text-center text-text-tertiary py-8">기록이 없습니다</p>
+                    <p className="text-center text-text-tertiary py-6 sm:py-8 text-sm">기록이 없습니다</p>
                   ) : (
                     userRecords.map((record) => (
-                      <div key={record.id} className="p-4">
-                        <div className="flex items-center justify-between mb-2">
-                          <p className="font-medium text-text-primary">{record.event?.name || "개인 기록"}</p>
-                          <p className="text-sm text-text-tertiary">{formatDate(record.date)}</p>
+                      <div key={record.id} className="p-3 sm:p-4">
+                        <div className="flex items-center justify-between mb-1.5 sm:mb-2">
+                          <p className="font-medium text-text-primary text-sm sm:text-base truncate mr-2">{record.event?.name || "개인 기록"}</p>
+                          <p className="text-xs sm:text-sm text-text-tertiary shrink-0">{formatDate(record.date)}</p>
                         </div>
-                        <div className="flex items-center gap-4 text-sm">
+                        <div className="flex flex-wrap items-center gap-2 sm:gap-4 text-xs sm:text-sm">
                           <span className="text-text-secondary">
-                            <MapPin className="w-4 h-4 inline mr-1" />
+                            <MapPin className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-0.5 sm:mr-1" />
                             {record.distance.toFixed(2)}km
                           </span>
                           <span className="text-text-secondary">
-                            <Clock className="w-4 h-4 inline mr-1" />
+                            <Clock className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-0.5 sm:mr-1" />
                             {formatDuration(record.duration)}
                           </span>
                           <span className="text-text-secondary">
@@ -3090,7 +3094,7 @@ export function AdminDashboard({
                           </span>
                         </div>
                         {record.notes && (
-                          <p className="text-sm text-text-tertiary mt-2">{record.notes}</p>
+                          <p className="text-xs sm:text-sm text-text-tertiary mt-1.5 sm:mt-2">{record.notes}</p>
                         )}
                       </div>
                     ))
@@ -3100,18 +3104,18 @@ export function AdminDashboard({
 
               {/* 페이지 뷰 통계 */}
               <section>
-                <h3 className="text-lg font-semibold text-text-primary mb-3">
-                  <BarChart3 className="w-5 h-5 inline mr-2" />
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-2 sm:mb-3">
+                  <BarChart3 className="w-4 h-4 sm:w-5 sm:h-5 inline mr-1.5 sm:mr-2" />
                   페이지 뷰 통계
                 </h3>
                 <Card className="divide-y divide-border">
                   {sortedUserPageViews.length === 0 ? (
-                    <p className="text-center text-text-tertiary py-8">페이지 뷰 기록이 없습니다</p>
+                    <p className="text-center text-text-tertiary py-6 sm:py-8 text-sm">페이지 뷰 기록이 없습니다</p>
                   ) : (
                     sortedUserPageViews.slice(0, 10).map(([path, count]) => (
-                      <div key={path} className="p-3 flex items-center justify-between">
-                        <span className="text-text-primary font-mono text-sm">{path}</span>
-                        <span className="text-text-secondary text-sm font-medium">{count}회</span>
+                      <div key={path} className="p-2.5 sm:p-3 flex items-center justify-between gap-2">
+                        <span className="text-text-primary font-mono text-xs sm:text-sm truncate">{path}</span>
+                        <span className="text-text-secondary text-xs sm:text-sm font-medium shrink-0">{count}회</span>
                       </div>
                     ))
                   )}
@@ -3120,30 +3124,30 @@ export function AdminDashboard({
 
               {/* 접속 로그 */}
               <section>
-                <h3 className="text-lg font-semibold text-text-primary mb-3">
-                  <History className="w-5 h-5 inline mr-2" />
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-2 sm:mb-3">
+                  <History className="w-4 h-4 sm:w-5 sm:h-5 inline mr-1.5 sm:mr-2" />
                   최근 접속 로그 ({userAccessLogs.length}개)
                 </h3>
-                <Card className="divide-y divide-border max-h-[400px] overflow-y-auto">
+                <Card className="divide-y divide-border max-h-[300px] sm:max-h-[400px] overflow-y-auto">
                   {userAccessLogs.length === 0 ? (
-                    <p className="text-center text-text-tertiary py-8">접속 기록이 없습니다</p>
+                    <p className="text-center text-text-tertiary py-6 sm:py-8 text-sm">접속 기록이 없습니다</p>
                   ) : (
                     userAccessLogs.slice(0, 50).map((log) => (
-                      <div key={log.id} className="p-3">
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium text-text-primary">
+                      <div key={log.id} className="p-2.5 sm:p-3">
+                        <div className="flex items-center justify-between mb-0.5 sm:mb-1">
+                          <span className="text-xs sm:text-sm font-medium text-text-primary">
                             {log.action === "page_view" ? "페이지 방문" : log.action}
                           </span>
-                          <span className="text-xs text-text-tertiary">
+                          <span className="text-[10px] sm:text-xs text-text-tertiary shrink-0">
                             {formatRelativeTime(new Date(log.createdAt))}
                           </span>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-text-tertiary">
-                          {log.path && <span className="font-mono">{log.path}</span>}
-                          {log.ipAddress && <span>IP: {log.ipAddress}</span>}
+                        <div className="flex flex-wrap items-center gap-1.5 sm:gap-3 text-[10px] sm:text-xs text-text-tertiary">
+                          {log.path && <span className="font-mono truncate max-w-[150px] sm:max-w-none">{log.path}</span>}
+                          {log.ipAddress && <span className="hidden sm:inline">IP: {log.ipAddress}</span>}
                           {log.metadata?.location && (
-                            <span className="flex items-center gap-1">
-                              <MapPin className="w-3 h-3" />
+                            <span className="flex items-center gap-0.5 sm:gap-1">
+                              <MapPin className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
                               {String(log.metadata.location)}
                             </span>
                           )}
@@ -3159,7 +3163,7 @@ export function AdminDashboard({
 
           {/* Crew Detail View */}
           {activeView === "crew-detail" && selectedCrew && (
-            <div className="space-y-6">
+            <div className="space-y-4 sm:space-y-6">
               <button
                 onClick={() => navigateTo("crews")}
                 className="flex items-center gap-2 text-text-secondary hover:text-text-primary transition-colors"
@@ -3168,14 +3172,14 @@ export function AdminDashboard({
                 <span className="text-sm">크루 목록으로</span>
               </button>
 
-              <Card className="p-6">
-                <div className="flex items-start gap-4">
-                  <div className="w-20 h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-3xl font-bold">
+              <Card className="p-4 sm:p-6">
+                <div className="flex flex-col sm:flex-row sm:items-start gap-4">
+                  <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl sm:text-3xl font-bold shrink-0">
                     {selectedCrew.name.charAt(0)}
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h2 className="text-xl font-bold text-text-primary">{selectedCrew.name}</h2>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1 flex-wrap">
+                      <h2 className="text-lg sm:text-xl font-bold text-text-primary">{selectedCrew.name}</h2>
                       {selectedCrew.isPublic ? (
                         <span className="px-2 py-0.5 bg-success/10 text-success text-xs font-medium rounded-full flex items-center gap-1">
                           <Globe className="w-3 h-3" />
@@ -3189,52 +3193,52 @@ export function AdminDashboard({
                       )}
                     </div>
                     {selectedCrew.description && (
-                      <p className="text-text-secondary">{selectedCrew.description}</p>
+                      <p className="text-sm sm:text-base text-text-secondary">{selectedCrew.description}</p>
                     )}
-                    <p className="text-sm text-text-tertiary mt-2 flex items-center gap-1">
-                      <Calendar className="w-4 h-4" />
+                    <p className="text-xs sm:text-sm text-text-tertiary mt-2 flex items-center gap-1">
+                      <Calendar className="w-4 h-4 shrink-0" />
                       생성일: {formatDate(selectedCrew.createdAt)}
                     </p>
                   </div>
                 </div>
               </Card>
 
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Card className="text-center py-4">
-                  <p className="text-2xl font-bold text-text-primary">{selectedCrew._count.members}</p>
-                  <p className="text-sm text-text-tertiary">멤버 수</p>
+              <div className="grid grid-cols-2 gap-2 sm:gap-4">
+                <Card className="text-center py-3 sm:py-4">
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">{selectedCrew._count.members}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">멤버 수</p>
                 </Card>
-                <Card className="text-center py-4">
-                  <p className="text-2xl font-bold text-text-primary">
+                <Card className="text-center py-3 sm:py-4">
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">
                     {selectedCrew.isPublic ? "공개" : "비공개"}
                   </p>
-                  <p className="text-sm text-text-tertiary">공개 상태</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">공개 상태</p>
                 </Card>
               </div>
 
               <section>
-                <h3 className="text-lg font-semibold text-text-primary mb-3">크루장</h3>
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-2 sm:mb-3">크루장</h3>
                 <Card
-                  className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
+                  className="flex items-center gap-3 p-3 sm:p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
                   onClick={() => openUserDetail(selectedCrew.owner.id)}
                 >
                   {selectedCrew.owner.image ? (
-                    <Image src={selectedCrew.owner.image} alt="" width={48} height={48} className="rounded-full" />
+                    <Image src={selectedCrew.owner.image} alt="" width={48} height={48} className="rounded-full w-10 h-10 sm:w-12 sm:h-12" />
                   ) : (
-                    <div className="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-primary flex items-center justify-center text-white font-bold shrink-0">
                       {selectedCrew.owner.name?.[0]?.toUpperCase() || "U"}
                     </div>
                   )}
-                  <div className="flex-1">
-                    <p className="font-medium text-text-primary">{selectedCrew.owner.name || "Unknown"}</p>
-                    <p className="text-sm text-text-tertiary">{selectedCrew.owner.email}</p>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium text-text-primary truncate">{selectedCrew.owner.name || "Unknown"}</p>
+                    <p className="text-xs sm:text-sm text-text-tertiary truncate">{selectedCrew.owner.email}</p>
                   </div>
-                  <Crown className="w-5 h-5 text-warning" />
+                  <Crown className="w-5 h-5 text-warning shrink-0" />
                 </Card>
               </section>
 
               <section>
-                <h3 className="text-lg font-semibold text-text-primary mb-3">
+                <h3 className="text-base sm:text-lg font-semibold text-text-primary mb-2 sm:mb-3">
                   멤버 ({selectedCrew.members.length}명)
                 </h3>
                 <Card className="divide-y divide-border">
@@ -3244,21 +3248,21 @@ export function AdminDashboard({
                     selectedCrew.members.map((member) => (
                       <div
                         key={member.id}
-                        className="flex items-center gap-3 p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
+                        className="flex items-center gap-3 p-3 sm:p-4 cursor-pointer hover:bg-surface-elevated transition-colors"
                         onClick={() => openUserDetail(member.user.id)}
                       >
                         {member.user.image ? (
-                          <Image src={member.user.image} alt="" width={40} height={40} className="rounded-full" />
+                          <Image src={member.user.image} alt="" width={40} height={40} className="rounded-full w-9 h-9 sm:w-10 sm:h-10" />
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium">
+                          <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-surface-elevated flex items-center justify-center text-text-secondary font-medium shrink-0">
                             {member.user.name?.[0]?.toUpperCase() || "U"}
                           </div>
                         )}
                         <div className="flex-1 min-w-0">
-                          <p className="font-medium text-text-primary truncate">{member.user.name || "Unknown"}</p>
-                          <p className="text-sm text-text-tertiary">{member.user.email}</p>
+                          <p className="font-medium text-text-primary truncate text-sm sm:text-base">{member.user.name || "Unknown"}</p>
+                          <p className="text-xs sm:text-sm text-text-tertiary truncate">{member.user.email}</p>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right shrink-0">
                           {member.user.id === selectedCrew.ownerId ? (
                             <Crown className="w-5 h-5 text-warning" />
                           ) : (

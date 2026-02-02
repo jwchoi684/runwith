@@ -1552,42 +1552,42 @@ export function AdminDashboard({
 
           {/* Dashboard View */}
           {activeView === "dashboard" && (
-            <div className="space-y-6">
+            <div className="space-y-4 lg:space-y-6">
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-4 gap-4">
-                <Card className="text-center py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("users")}>
-                  <Users className="w-8 h-8 text-primary mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-text-primary">{stats.totalUsers}</p>
-                  <p className="text-sm text-text-tertiary">전체 사용자</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
+                <Card className="text-center py-3 sm:py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("users")}>
+                  <Users className="w-6 h-6 sm:w-8 sm:h-8 text-primary mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalUsers}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">전체 사용자</p>
                 </Card>
-                <Card className="text-center py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("records")}>
-                  <FileText className="w-8 h-8 text-success mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-text-primary">{stats.totalRecords}</p>
-                  <p className="text-sm text-text-tertiary">전체 기록</p>
+                <Card className="text-center py-3 sm:py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("records")}>
+                  <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-success mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalRecords}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">전체 기록</p>
                 </Card>
-                <Card className="text-center py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("crews")}>
-                  <Users2 className="w-8 h-8 text-warning mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-text-primary">{stats.totalCrews}</p>
-                  <p className="text-sm text-text-tertiary">전체 크루</p>
+                <Card className="text-center py-3 sm:py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("crews")}>
+                  <Users2 className="w-6 h-6 sm:w-8 sm:h-8 text-warning mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalCrews}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">전체 크루</p>
                 </Card>
-                <Card className="text-center py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("events")}>
-                  <Trophy className="w-8 h-8 text-error mx-auto mb-2" />
-                  <p className="text-2xl font-bold text-text-primary">{stats.totalEvents}</p>
-                  <p className="text-sm text-text-tertiary">마라톤 대회</p>
+                <Card className="text-center py-3 sm:py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("events")}>
+                  <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-error mx-auto mb-1 sm:mb-2" />
+                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalEvents}</p>
+                  <p className="text-xs sm:text-sm text-text-tertiary">마라톤 대회</p>
                 </Card>
               </div>
 
               {/* DAU/MAU Trend Charts */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
                 {/* DAU Trend (Last 30 Days) */}
                 <section>
-                  <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
-                    <Activity className="w-5 h-5 text-success" />
+                  <h2 className="text-base sm:text-lg font-semibold text-text-primary mb-2 sm:mb-3 flex items-center gap-2">
+                    <Activity className="w-4 h-4 sm:w-5 sm:h-5 text-success" />
                     DAU 추이 (최근 30일)
                   </h2>
-                  <Card className="p-4">
+                  <Card className="p-3 sm:p-4">
                     {/* Chart Area */}
-                    <div className="flex items-end gap-[2px] h-32 mb-2">
+                    <div className="flex items-end gap-[2px] h-24 sm:h-32 mb-2">
                       {dauTrend.map((day, index) => {
                         const maxCount = Math.max(...dauTrend.map(d => d.count), 1);
                         const height = (day.count / maxCount) * 100;
@@ -1613,7 +1613,7 @@ export function AdminDashboard({
                       })}
                     </div>
                     {/* X-axis Labels */}
-                    <div className="flex justify-between text-[10px] text-text-tertiary border-t border-border pt-2">
+                    <div className="flex justify-between text-[9px] sm:text-[10px] text-text-tertiary border-t border-border pt-2">
                       <span>{dauTrend[0]?.date.slice(5)}</span>
                       <span>{dauTrend[9]?.date.slice(5)}</span>
                       <span>{dauTrend[19]?.date.slice(5)}</span>
@@ -1621,20 +1621,20 @@ export function AdminDashboard({
                     </div>
                     {/* Summary */}
                     <div className="flex justify-center mt-2">
-                      <span className="text-sm font-medium text-success">오늘: {dauTrend[dauTrend.length - 1]?.count || 0}명</span>
+                      <span className="text-xs sm:text-sm font-medium text-success">오늘: {dauTrend[dauTrend.length - 1]?.count || 0}명</span>
                     </div>
                   </Card>
                 </section>
 
                 {/* MAU Trend (Last 12 Months) */}
                 <section>
-                  <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
-                    <TrendingUp className="w-5 h-5 text-primary" />
+                  <h2 className="text-base sm:text-lg font-semibold text-text-primary mb-2 sm:mb-3 flex items-center gap-2">
+                    <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                     MAU 추이 (최근 12개월)
                   </h2>
-                  <Card className="p-4">
+                  <Card className="p-3 sm:p-4">
                     {/* Chart Area */}
-                    <div className="flex items-end gap-1 h-32 mb-2">
+                    <div className="flex items-end gap-1 h-24 sm:h-32 mb-2">
                       {mauTrend.map((month, index) => {
                         const maxCount = Math.max(...mauTrend.map(m => m.count), 1);
                         const height = (month.count / maxCount) * 100;
@@ -1660,14 +1660,14 @@ export function AdminDashboard({
                       })}
                     </div>
                     {/* X-axis Labels */}
-                    <div className="flex justify-between text-[10px] text-text-tertiary border-t border-border pt-2">
+                    <div className="flex justify-between text-[9px] sm:text-[10px] text-text-tertiary border-t border-border pt-2">
                       {mauTrend.map((month) => (
                         <span key={month.month} className="flex-1 text-center">{month.label}</span>
                       ))}
                     </div>
                     {/* Summary */}
                     <div className="flex justify-center mt-2">
-                      <span className="text-sm font-medium text-primary">이번 달: {mauTrend[mauTrend.length - 1]?.count || 0}명</span>
+                      <span className="text-xs sm:text-sm font-medium text-primary">이번 달: {mauTrend[mauTrend.length - 1]?.count || 0}명</span>
                     </div>
                   </Card>
                 </section>

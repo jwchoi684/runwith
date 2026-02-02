@@ -2422,7 +2422,7 @@ export function AdminDashboard({
                               </button>
                             </th>
                             <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">대회명</th>
-                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary">지역</th>
+                            <th className="text-center px-4 py-3 text-sm font-medium text-text-secondary whitespace-nowrap">지역</th>
                             <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">장소</th>
                             <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">종목</th>
                             <th className="text-left px-4 py-3 text-sm font-medium text-text-secondary">날짜</th>
@@ -2465,11 +2465,11 @@ export function AdminDashboard({
                                   )}
                                 </div>
                               </td>
-                              <td className="px-4 py-3 text-center text-sm">
+                              <td className="px-4 py-3 text-center text-sm whitespace-nowrap">
                                 {event.region === "international" ? (
-                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full">해외</span>
+                                  <span className="px-2 py-0.5 bg-blue-100 text-blue-700 text-xs font-medium rounded-full whitespace-nowrap">해외</span>
                                 ) : (
-                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full">국내</span>
+                                  <span className="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs font-medium rounded-full whitespace-nowrap">국내</span>
                                 )}
                               </td>
                               <td className="px-4 py-3 text-sm text-text-secondary">{event.location || "-"}</td>

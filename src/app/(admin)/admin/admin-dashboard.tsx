@@ -1712,7 +1712,7 @@ export function AdminDashboard({
                   </h2>
                   <Card className="p-3 sm:p-4">
                     {/* Chart Area */}
-                    <div className="flex items-end gap-[2px] h-24 sm:h-32 mb-2">
+                    <div className="flex gap-[2px] h-24 sm:h-32 mb-2">
                       {dauTrend.map((day, index) => {
                         const maxCount = Math.max(...dauTrend.map(d => d.count), 1);
                         const height = (day.count / maxCount) * 100;
@@ -1720,7 +1720,7 @@ export function AdminDashboard({
                         return (
                           <div
                             key={day.date}
-                            className="flex-1 group relative cursor-pointer"
+                            className="flex-1 h-full flex flex-col justify-end group relative cursor-pointer"
                             title={`${day.date}: ${day.count}명`}
                           >
                             <div
@@ -1759,7 +1759,7 @@ export function AdminDashboard({
                   </h2>
                   <Card className="p-3 sm:p-4">
                     {/* Chart Area */}
-                    <div className="flex items-end gap-1 h-24 sm:h-32 mb-2">
+                    <div className="flex gap-1 h-24 sm:h-32 mb-2">
                       {mauTrend.map((month, index) => {
                         const maxCount = Math.max(...mauTrend.map(m => m.count), 1);
                         const height = (month.count / maxCount) * 100;
@@ -1767,7 +1767,7 @@ export function AdminDashboard({
                         return (
                           <div
                             key={month.month}
-                            className="flex-1 group relative cursor-pointer"
+                            className="flex-1 h-full flex flex-col justify-end group relative cursor-pointer"
                             title={`${month.month}: ${month.count}명`}
                           >
                             <div

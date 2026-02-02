@@ -1567,7 +1567,7 @@ export function AdminDashboard({
           </div>
         </header>
 
-        <div className="p-4 lg:p-8">
+        <div className="p-3 sm:p-4 lg:p-8">
           {/* Desktop Header */}
           <div className="hidden lg:block mb-8">
             <h1 className="text-2xl font-bold text-text-primary">
@@ -1579,26 +1579,26 @@ export function AdminDashboard({
           {activeView === "dashboard" && (
             <div className="space-y-4 lg:space-y-6">
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-2 sm:gap-4">
-                <Card className="text-center py-3 sm:py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("users")}>
-                  <Users className="w-6 h-6 sm:w-8 sm:h-8 text-primary mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalUsers}</p>
-                  <p className="text-xs sm:text-sm text-text-tertiary">전체 사용자</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-1.5 sm:gap-4">
+                <Card className="text-center py-2.5 sm:py-6 px-1 sm:px-4 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("users")}>
+                  <Users className="w-5 h-5 sm:w-8 sm:h-8 text-primary mx-auto mb-0.5 sm:mb-2" />
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">{stats.totalUsers}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">전체 사용자</p>
                 </Card>
-                <Card className="text-center py-3 sm:py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("records")}>
-                  <FileText className="w-6 h-6 sm:w-8 sm:h-8 text-success mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalRecords}</p>
-                  <p className="text-xs sm:text-sm text-text-tertiary">전체 기록</p>
+                <Card className="text-center py-2.5 sm:py-6 px-1 sm:px-4 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("records")}>
+                  <FileText className="w-5 h-5 sm:w-8 sm:h-8 text-success mx-auto mb-0.5 sm:mb-2" />
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">{stats.totalRecords}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">전체 기록</p>
                 </Card>
-                <Card className="text-center py-3 sm:py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("crews")}>
-                  <Users2 className="w-6 h-6 sm:w-8 sm:h-8 text-warning mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalCrews}</p>
-                  <p className="text-xs sm:text-sm text-text-tertiary">전체 크루</p>
+                <Card className="text-center py-2.5 sm:py-6 px-1 sm:px-4 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("crews")}>
+                  <Users2 className="w-5 h-5 sm:w-8 sm:h-8 text-warning mx-auto mb-0.5 sm:mb-2" />
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">{stats.totalCrews}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">전체 크루</p>
                 </Card>
-                <Card className="text-center py-3 sm:py-6 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("events")}>
-                  <Trophy className="w-6 h-6 sm:w-8 sm:h-8 text-error mx-auto mb-1 sm:mb-2" />
-                  <p className="text-xl sm:text-2xl font-bold text-text-primary">{stats.totalEvents}</p>
-                  <p className="text-xs sm:text-sm text-text-tertiary">마라톤 대회</p>
+                <Card className="text-center py-2.5 sm:py-6 px-1 sm:px-4 cursor-pointer hover:shadow-toss-lg transition-shadow" onClick={() => navigateTo("events")}>
+                  <Trophy className="w-5 h-5 sm:w-8 sm:h-8 text-error mx-auto mb-0.5 sm:mb-2" />
+                  <p className="text-lg sm:text-2xl font-bold text-text-primary">{stats.totalEvents}</p>
+                  <p className="text-[10px] sm:text-sm text-text-tertiary">마라톤 대회</p>
                 </Card>
               </div>
 
@@ -1700,15 +1700,15 @@ export function AdminDashboard({
 
               {/* Statistics Section */}
               <section>
-                <h2 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
-                  <Globe className="w-5 h-5 text-primary" />
+                <h2 className="text-sm sm:text-lg font-semibold text-text-primary mb-2 sm:mb-3 flex items-center gap-2">
+                  <Globe className="w-4 h-4 sm:w-5 sm:h-5 text-primary" />
                   인기 페이지 (조회수)
                 </h2>
-                <Card className="p-4">
+                <Card className="p-2.5 sm:p-4">
                   {pageStats.length === 0 ? (
                     <div className="text-center text-text-tertiary py-4">데이터가 없습니다</div>
                   ) : (
-                    <div className="space-y-3">
+                    <div className="space-y-2 sm:space-y-3">
                       {(() => {
                         const maxCount = Math.max(...pageStats.slice(0, 10).map(s => s.count));
                         return pageStats.slice(0, 10).map((stat, index) => {
@@ -1737,9 +1737,9 @@ export function AdminDashboard({
                           };
                           return (
                             <div key={stat.path} className="group">
-                              <div className="flex items-center gap-3 mb-1.5">
+                              <div className="flex items-center gap-2 sm:gap-3 mb-1 sm:mb-1.5">
                                 {/* Rank Badge */}
-                                <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                                <div className={`w-5 h-5 sm:w-7 sm:h-7 rounded-full flex items-center justify-center text-[10px] sm:text-xs font-bold shrink-0 ${
                                   index === 0 ? "bg-gradient-to-br from-yellow-400 to-yellow-600 text-white shadow-lg shadow-yellow-500/30" :
                                   index === 1 ? "bg-gradient-to-br from-gray-300 to-gray-500 text-white shadow-lg shadow-gray-400/30" :
                                   index === 2 ? "bg-gradient-to-br from-orange-400 to-orange-600 text-white shadow-lg shadow-orange-500/30" :
@@ -1748,19 +1748,19 @@ export function AdminDashboard({
                                   {index + 1}
                                 </div>
                                 {/* Page Icon & Name */}
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
-                                  <span className="text-base">{getPageIcon(stat.path)}</span>
-                                  <span className="font-medium text-text-primary truncate">{getPageName(stat.path)}</span>
-                                  <span className="text-xs text-text-tertiary truncate hidden sm:inline">({stat.path})</span>
+                                <div className="flex items-center gap-1 sm:gap-2 flex-1 min-w-0">
+                                  <span className="text-sm sm:text-base">{getPageIcon(stat.path)}</span>
+                                  <span className="text-xs sm:text-sm font-medium text-text-primary truncate">{getPageName(stat.path)}</span>
+                                  <span className="text-[10px] sm:text-xs text-text-tertiary truncate hidden sm:inline">({stat.path})</span>
                                 </div>
                                 {/* Count */}
                                 <div className="text-right shrink-0">
-                                  <span className="font-bold text-primary">{stat.count.toLocaleString()}</span>
-                                  <span className="text-xs text-text-tertiary ml-1">회</span>
+                                  <span className="text-xs sm:text-sm font-bold text-primary">{stat.count.toLocaleString()}</span>
+                                  <span className="text-[10px] sm:text-xs text-text-tertiary ml-0.5 sm:ml-1">회</span>
                                 </div>
                               </div>
                               {/* Progress Bar */}
-                              <div className="ml-10 h-2 bg-surface-elevated rounded-full overflow-hidden">
+                              <div className="ml-7 sm:ml-10 h-1.5 sm:h-2 bg-surface-elevated rounded-full overflow-hidden">
                                 <div
                                   className={`h-full rounded-full transition-all duration-500 ${
                                     index === 0 ? "bg-gradient-to-r from-yellow-400 to-yellow-500" :
